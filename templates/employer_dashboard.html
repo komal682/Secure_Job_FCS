@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Employer Dashboard | Secure Job Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto z-10 w-full animate-fade-in-up">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+        <div class="bg-purple-600 p-8 text-white relative overflow-hidden">
+            <!-- Decorative circle -->
+            <div class="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full blur-xl"></div>
+            <div class="absolute bottom-0 -left-10 w-32 h-32 bg-purple-900 opacity-20 rounded-full blur-md"></div>
+
+            <div class="relative z-10 flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold mb-2">Welcome, {{ user.first_name|default:user.email }}!</h2>
+                    <p class="text-purple-100">Employer Dashboard</p>
+                </div>
+                <div class="hidden sm:block">
+                    <div
+                        class="w-20 h-20 bg-white rounded-full flex items-center justify-center text-purple-600 text-3xl font-bold shadow-lg">
+                        {{ user.first_name|default:user.email|make_list|first|upper }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8">
+            <h3 class="text-xl font-semibold text-gray-800 mb-6">Your Overview</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Stat Card 1 -->
+                <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-md transition cursor-pointer">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-gray-500 font-medium">Active Jobs</h4>
+                        <span class="text-purple-600 bg-purple-100 p-2 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900">0</p>
+                    <p class="text-sm text-gray-500 mt-2">No active job listings.</p>
+                </div>
+
+                <!-- Stat Card 2 -->
+                <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-md transition cursor-pointer">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-gray-500 font-medium">Total Applicants</h4>
+                        <span class="text-blue-600 bg-blue-100 p-2 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                                </path>
+                            </svg>
+                        </span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900">0</p>
+                    <p class="text-sm text-gray-500 mt-2">Post a job to start receiving applications.</p>
+                </div>
+
+                <!-- Stat Card 3 -->
+                <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-md transition cursor-pointer">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-gray-500 font-medium">Messages</h4>
+                        <span class="text-green-600 bg-green-100 p-2 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                                </path>
+                            </svg>
+                        </span>
+                    </div>
+                    <p class="text-3xl font-bold text-gray-900">0</p>
+                    <p class="text-sm text-gray-500 mt-2">No unread messages.</p>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-center">
+                <button
+                    class="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition shadow-md flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Post a Job
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.5s ease-out forwards;
+    }
+</style>
+{% endblock %}

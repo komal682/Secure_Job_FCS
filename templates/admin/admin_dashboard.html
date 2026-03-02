@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto z-10 w-full animate-fade-in-up mt-6">
+
+    <div class="flex justify-between items-end mb-6">
+        <div>
+            <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Admin Moderation Console</h1>
+            <p class="text-sm text-gray-500 mt-1 font-mono">Role-Based Access Control / Global View</p>
+        </div>
+        <a href="{% url 'logout' %}"
+            class="inline-flex items-center px-4 py-2 border border-red-200 text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition shadow-sm">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                </path>
+            </svg>
+            Terminate Session
+        </a>
+    </div>
+
+    {% if messages %}
+    <div id="flash-messages" class="mb-6">
+        {% for message in messages %}
+        <div class="p-4 rounded-md text-sm font-medium shadow-sm transition-opacity duration-500
+             {% if message.tags == 'success' %}bg-green-50 border border-green-200 text-green-700
+             {% elif message.tags == 'error' %}bg-red-50 border border-red-200 text-red-700
+             {% else %}bg-blue-50 border border-blue-200 text-blue-700{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+        setTimeout(function () {
+            let container = document.getElementById('flash-messages');
+            if (container) {
+                container.style.opacity = '0';
+                setTimeout(() => container.remove(), 500);
+            }
+        }, 5000);
+    </script>
+    {% endif %}
+
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+        <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-white flex items-center">
+                <svg class="w-5 h-5 mr-2 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                    </path>
+                </svg>
+                Registered Accounts Directory
+            </h2>
+            <span
+                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                {{ users|length }} Total Users
+            </span>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Account
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            Security Setup</th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Role
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for p_user in users %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">{{ p_user.first_name }} {{
+                                        p_user.last_name }}</div>
+                                    <div class="text-sm text-gray-500 font-mono">{{ p_user.email }}</div>
+                                    <div class="text-xs text-gray-400 mt-1">Joined: {{ p_user.date_joined|date:"M d, Y"
+                                        }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if p_user.is_totp_enabled %}
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <svg class="-ml-0.5 mr-1.5 h-3 w-3 text-green-500" fill="currentColor"
+                                    viewBox="0 0 8 8">
+                                    <circle cx="4" cy="4" r="3" />
+                                </svg>
+                                TOTP Active
+                            </span>
+                            {% else %}
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <svg class="-ml-0.5 mr-1.5 h-3 w-3 text-yellow-500" fill="currentColor"
+                                    viewBox="0 0 8 8">
+                                    <circle cx="4" cy="4" r="3" />
+                                </svg>
+                                2FA Pending
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if p_user.role == 'ADMIN' %}
+                            <span
+                                class="px-2 py-1 inline-flex text-xs leading-5 font-bold rounded bg-red-100 text-red-800 border border-red-200">ADMINISTRATOR</span>
+                            {% elif p_user.role == 'EMPLOYER' %}
+                            <span
+                                class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded bg-purple-100 text-purple-800 border border-purple-200">EMPLOYER</span>
+                            {% else %}
+                            <span
+                                class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded bg-blue-100 text-blue-800 border border-blue-200">CANDIDATE</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if p_user.is_active %}
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                            {% else %}
+                            <span
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Suspended</span>
+                            {% endif %}
+                        </td>
+
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {% if p_user.role != 'ADMIN' %}
+                            <div class="flex justify-end space-x-2">
+                                <form method="post"
+                                    action="{% url 'moderate_user' user_id=p_user.id action='suspend' %}">
+                                    {% csrf_token %}
+                                    {% if p_user.is_active %}
+                                    <button type="submit"
+                                        class="text-orange-600 hover:text-orange-900 bg-orange-50 hover:bg-orange-100 px-3 py-1 rounded border border-orange-200 transition">Suspend</button>
+                                    {% else %}
+                                    <button type="submit"
+                                        class="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-1 rounded border border-green-200 transition">Reactivate</button>
+                                    {% endif %}
+                                </form>
+                                <form method="post" action="{% url 'moderate_user' user_id=p_user.id action='delete' %}"
+                                    onsubmit="return confirm('Are you sure you want to PERMANENTLY delete user {{ p_user.email }}? This action cannot be undone.');">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                        class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1 rounded border border-red-200 transition">Delete</button>
+                                </form>
+                            </div>
+                            {% else %}
+                            <span class="text-gray-400 text-xs italic">Protected Node</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.4s ease-out forwards;
+    }
+</style>
+{% endblock %}

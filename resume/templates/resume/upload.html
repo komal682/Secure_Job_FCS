@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex justify-center z-10 w-full animate-fade-in-up mt-10">
+    <div class="glass-panel rounded-2xl shadow-xl w-full max-w-lg p-10">
+
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                    </path>
+                </svg>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-900">Secure Resume Upload</h2>
+            <p class="text-gray-500 mt-2">Your files are encrypted with AES-256 military-grade encryption before
+                storage.</p>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <div class="bg-gray-50 p-4 border border-gray-200 rounded-xl">
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.resume_file.label }}</label>
+                <div
+                    class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md bg-white hover:bg-gray-50 transition">
+                    <div class="space-y-1 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
+                            viewBox="0 0 48 48" aria-hidden="true">
+                            <path
+                                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <div class="flex text-sm text-gray-600 justify-center">
+                            <label for="{{ form.resume_file.id_for_label }}"
+                                class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none">
+                                <span>Browse files</span>
+                                <input id="{{ form.resume_file.id_for_label }}" name="{{ form.resume_file.name }}"
+                                    type="file" class="sr-only" required accept=".pdf,.doc,.docx">
+                            </label>
+                        </div>
+                        <p class="text-xs text-gray-500" id="file-name-display">PDF or DOCX up to 10MB</p>
+                    </div>
+                </div>
+                {% if form.resume_file.errors %}
+                <p class="text-red-500 text-xs mt-2">{{ form.resume_file.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <button type="submit"
+                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                </svg>
+                Encrypt & Upload Resume
+            </button>
+        </form>
+
+        <div class="mt-6 text-center">
+            <a href="{% url 'resume_list' %}" class="text-sm font-medium text-blue-600 hover:text-blue-500">View My
+                Resumes</a>
+            <span class="mx-2 text-gray-300">|</span>
+            {% if request.user.role == 'CANDIDATE' %}
+            <a href="{% url 'candidate_dashboard' %}" class="text-sm font-medium text-gray-500 hover:text-gray-700">Back
+                to Dashboard</a>
+            {% else %}
+            <a href="{% url 'home' %}" class="text-sm font-medium text-gray-500 hover:text-gray-700">Go Home</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // JS to update the UI when a file is selected
+    document.getElementById('{{ form.resume_file.id_for_label }}').addEventListener('change', function (e) {
+        if (e.target.files.length > 0) {
+            document.getElementById('file-name-display').innerHTML = '<span class="text-blue-600 font-semibold">' + e.target.files[0].name + '</span> selected';
+        }
+    });
+</script>
+
+<style>
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-fade-in-up {
+        animation: fadeInUp 0.4s ease-out forwards;
+    }
+</style>
+{% endblock %}

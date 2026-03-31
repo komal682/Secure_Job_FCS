@@ -45,7 +45,7 @@
                 </div>
 
                 <!-- Stat Card 2 -->
-                <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-md transition cursor-pointer">
+                <a href="{% url 'employer_jobs_list' %}" class="block bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-md transition cursor-pointer hover:-translate-y-1">
                     <div class="flex items-center justify-between mb-4">
                         <h4 class="text-gray-500 font-medium">Total Applicants</h4>
                         <span class="text-blue-600 bg-blue-100 p-2 rounded-lg">
@@ -56,9 +56,9 @@
                             </svg>
                         </span>
                     </div>
-                    <p class="text-3xl font-bold text-gray-900">0</p>
-                    <p class="text-sm text-gray-500 mt-2">Post a job to start receiving applications.</p>
-                </div>
+                    <p class="text-3xl font-bold text-gray-900">{{ request.user.company.job_postings.all|length|default:0 }}</p>
+                    <p class="text-sm text-gray-500 mt-2">Check 'Manage Job Postings' for details.</p>
+                </a>
 
                 <!-- Stat Card 3 -->
                 <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-md transition cursor-pointer">
@@ -77,14 +77,22 @@
                 </div>
             </div>
 
-            <div class="mt-8 flex justify-center">
-                <button
+            <div class="mt-8 flex justify-center space-x-4">
+                <a href="{% url 'employer_jobs_list' %}"
                     class="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition shadow-md flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
-                    Post a Job
-                </button>
+                    Manage Job Postings
+                </a>
+                
+                <a href="{% url 'company_setup' %}"
+                    class="bg-white border-2 border-purple-600 text-purple-600 px-6 py-3 rounded-lg font-medium hover:bg-purple-50 transition shadow-sm flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    Company Profile
+                </a>
             </div>
         </div>
     </div>

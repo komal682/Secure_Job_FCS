@@ -184,8 +184,10 @@ def admin_login(request):
 
 @admin_required
 def admin_dashboard(request):
+    from .models import SecurityAuditLog
     users = User.objects.all().order_by('-date_joined')
-    return render(request, 'admin/admin_dashboard.html', {'users': users})
+    audit_logs = SecurityAuditLog.objects.all()[:50]
+    return render(request, 'admin/admin_dashboard.html', {'users': users, 'audit_logs': audit_logs})
 
 @admin_required
 def moderate_user(request, user_id, action):

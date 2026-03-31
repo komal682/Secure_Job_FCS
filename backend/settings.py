@@ -40,9 +40,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'accounts',
     'resume',
+    'jobs',
+    'messaging',
 ]
 
 RESUME_ENCRYPTION_KEY = b'01234567890123456789012345678901'
+import os
+MESSAGING_KEY = os.environ.get('MESSAGING_KEY', 'x_qfH8uL9VXZgP6Vd2mHl2U9jKkH4_g1zS8o9XwGz2c=')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -131,3 +135,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'accounts.User'
+
+LOGIN_URL = 'login'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

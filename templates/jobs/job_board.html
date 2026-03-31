@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Opportunity Board | Candidates{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto z-10 w-full animate-fade-in-up mt-8">
+    
+    <div class="text-center mb-10">
+        <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">Discover Opportunities</h1>
+        <p class="text-lg text-gray-600 mt-2">Find the next step in your career.</p>
+    </div>
+
+    <!-- Search Form -->
+    <div class="glass-panel rounded-2xl p-4 shadow-lg mb-10">
+        <form method="get" class="flex flex-col md:flex-row gap-4">
+            <div class="flex-1 relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" name="q" value="{{ query }}" placeholder="Job title, keyword, or company..." class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition">
+            </div>
+            
+            <div class="flex-1 relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                </div>
+                <input type="text" name="location" value="{{ location }}" placeholder="City, State, or Zip..." class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition">
+            </div>
+
+            <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md w-full md:w-auto">
+                Search
+            </button>
+            {% if query or location %}
+            <a href="{% url 'job_board' %}" class="bg-gray-100 text-gray-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-200 transition shadow-sm text-center md:w-auto flex items-center justify-center">
+                Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Job Listings Grid -->
+    <div class="mb-6 flex justify-between items-center">
+        <h2 class="text-xl font-bold text-gray-800">{{ jobs|length }} Active Openings</h2>
+        <div class="text-sm text-gray-500">Showing all matched jobs.</div>
+    </div>
+
+    {% if not jobs %}
+    <div class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <h3 class="mt-2 text-lg font-medium text-gray-900">No jobs found matching your criteria.</h3>
+        <p class="mt-1 text-sm text-gray-500">Try adjusting your search filters.</p>
+    </div>
+    {% else %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for job in jobs %}
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col h-full relative overflow-hidden group">
+            <div class="absolute top-0 left-0 w-2 h-full bg-indigo-500 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
+            <div class="p-6 flex-grow flex flex-col">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-xl font-bold text-indigo-600 uppercase border border-gray-200">
+                        {{ job.company.name|make_list|first }}
+                    </div>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-800 border border-indigo-100">
+                        {{ job.get_employment_type_display }}
+                    </span>
+                </div>
+                
+                <h3 class="text-xl font-bold text-gray-900 mb-1 leading-tight">{{ job.title }}</h3>
+                <a href="{% url 'company_public_detail' job.company.id %}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline inline-block mb-3">
+                    {{ job.company.name }}
+                </a>
+                
+                <div class="flex items-center text-sm text-gray-500 mb-2 mt-auto">
+                    <svg class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    {{ job.location }}
+                </div>
+                
+                {% if job.salary_range %}
+                <div class="flex items-center text-sm text-gray-500 mb-4">
+                    <svg class="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    {{ job.salary_range }}
+                </div>
+                {% else %}
+                <div class="mb-4"></div>
+                {% endif %}
+            </div>
+            
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
+                <a href="{% url 'job_detail' job.id %}" class="w-full text-center block text-sm font-bold text-indigo-600 hover:text-indigo-800">
+                    View & Apply &rarr;
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+</style>
+{% endblock %}

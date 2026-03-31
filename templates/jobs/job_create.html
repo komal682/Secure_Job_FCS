@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}Post a Job | Employer Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto z-10 w-full animate-fade-in-up mt-8 mb-16">
+    <div class="glass-panel rounded-2xl shadow-xl overflow-hidden p-8">
+        <div class="flex items-center space-x-4 mb-8 border-b border-gray-100 pb-6">
+            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            </div>
+            <div>
+                <h2 class="text-3xl font-extrabold text-gray-900">Post a New Role</h2>
+                <p class="text-gray-500">Create a job posting under <strong>{{ request.user.company.name }}</strong></p>
+            </div>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700">Job Title <span class="text-red-500">*</span></label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ form.title.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.employment_type.id_for_label }}" class="block text-sm font-medium text-gray-700">Employment Type <span class="text-red-500">*</span></label>
+                    {{ form.employment_type }}
+                </div>
+                <div>
+                    <label for="{{ form.location.id_for_label }}" class="block text-sm font-medium text-gray-700">Location (e.g. Remote, NYC) <span class="text-red-500">*</span></label>
+                    {{ form.location }}
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ form.salary_range.id_for_label }}" class="block text-sm font-medium text-gray-700">Salary Range</label>
+                {{ form.salary_range }}
+                <p class="mt-1 text-xs text-gray-400">Optional. e.g. "$80k - $100k" or "Competitive"</p>
+            </div>
+
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">Job Description <span class="text-red-500">*</span></label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                <p class="text-red-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label for="{{ form.requirements.id_for_label }}" class="block text-sm font-medium text-gray-700">Requirements</label>
+                {{ form.requirements }}
+                <p class="mt-1 text-xs text-gray-400">List skills, experience, or degrees preferred.</p>
+            </div>
+
+            <div class="flex items-center pt-4">
+                {{ form.is_active }}
+                <label for="{{ form.is_active.id_for_label }}" class="ml-2 block text-sm font-medium text-gray-900">
+                    Set this job posting as Active (visible to candidates immediately)
+                </label>
+            </div>
+
+            <div class="pt-6 border-t border-gray-200 mt-8 flex justify-end space-x-4">
+                <a href="{% url 'employer_jobs_list' %}" class="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition shadow-sm">
+                    Cancel
+                </a>
+                <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-indigo-700 transition shadow-md">
+                    Publish Job
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+</style>
+{% endblock %}

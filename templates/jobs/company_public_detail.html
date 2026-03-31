@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Working at {{ company.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto z-10 w-full animate-fade-in-up mt-8 mb-16">
+    
+    <!-- Company Header -->
+    <div class="glass-panel rounded-2xl shadow-xl overflow-hidden mb-12 relative text-center pb-10">
+        <div class="h-48 bg-gray-900 bg-opacity-90 flex items-center justify-center">
+            <!-- subtle pattern or gradient can go here -->
+            <div class="absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-800 opacity-50"></div>
+        </div>
+        
+        <div class="-mt-16 relative z-10 flex flex-col items-center">
+            <div class="w-32 h-32 bg-white rounded-full shadow-2xl flex items-center justify-center text-5xl font-extrabold text-indigo-600 uppercase border-4 border-white mb-4">
+                {{ company.name|make_list|first }}
+            </div>
+            <h1 class="text-4xl font-black text-gray-900 tracking-tight">{{ company.name }}</h1>
+            <div class="flex items-center space-x-6 mt-4 text-gray-600 font-medium">
+                {% if company.location %}
+                <span class="flex items-center">
+                    <svg class="h-5 w-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                    {{ company.location }}
+                </span>
+                {% endif %}
+                {% if company.website %}
+                <span class="flex items-center">
+                    <svg class="h-5 w-5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                    <a href="{{ company.website }}" target="_blank" class="hover:text-indigo-600 transition">{{ company.website|urlizetrunc:30 }}</a>
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        
+        <!-- About Section -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 sticky top-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4 border-b border-gray-100 pb-3">About Us</h3>
+                <div class="prose prose-sm text-gray-600">
+                    {{ company.description|linebreaks }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Open Roles -->
+        <div class="lg:col-span-2">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                <span class="bg-indigo-100 text-indigo-800 text-sm font-black px-3 py-1 rounded-full mr-3">{{ jobs|length }}</span> 
+                Open Roles
+            </h2>
+
+            {% if not jobs %}
+            <div class="glass-panel text-center py-12 rounded-xl">
+                <h3 class="text-lg font-medium text-gray-600">Currently no open positions.</h3>
+                <p class="text-gray-400 mt-2">Check back later for new opportunities at {{ company.name }}.</p>
+            </div>
+            {% else %}
+            <div class="space-y-4">
+                {% for job in jobs %}
+                <a href="{% url 'job_detail' job.id %}" class="block group">
+                    <div class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between shadow-sm hover:shadow-lg hover:border-indigo-300 transition-all duration-200">
+                        <div>
+                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{{ job.title }}</h3>
+                            <div class="flex items-center text-sm text-gray-500 mt-2 space-x-4">
+                                <span class="flex items-center"><svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>{{ job.location }}</span>
+                                <span class="flex items-center"><svg class="h-4 w-4 mr-1 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>{{ job.get_employment_type_display }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 sm:mt-0">
+                            <span class="inline-flex items-center text-sm font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
+                                View Details &rarr;
+                            </span>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        
+    </div>
+</div>
+
+<style>
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+</style>
+{% endblock %}

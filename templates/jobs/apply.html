@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Apply for {{ job.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto z-10 w-full animate-fade-in-up mt-8 mb-16">
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-indigo-600 p-8 text-white relative">
+            <h1 class="text-3xl font-extrabold tracking-tight">Application: {{ job.title }}</h1>
+            <p class="text-indigo-100 mt-2">Submit your encrypted profile to {{ job.company.name }}.</p>
+        </div>
+        
+        <div class="p-8">
+            {% if form.fields.resume.queryset|length == 0 %}
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-lg shadow-sm mb-6">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 pt-0.5">
+                        <svg class="h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-bold text-yellow-800">No Secure Resumes Found</p>
+                        <p class="text-sm text-yellow-700 mt-1">You must upload an AES-256 encrypted resume to your Secure Vault before you can apply to jobs.</p>
+                        <div class="mt-4">
+                            <a href="{% url 'upload_resume' %}" class="bg-yellow-100 px-4 py-2 rounded text-sm font-bold text-yellow-900 border border-yellow-300 hover:bg-yellow-200 shadow-sm transition">Go to Secure Vault &rarr;</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 mb-1">Select an Encrypted Resume <span class="text-red-500">*</span></label>
+                    <p class="text-xs text-gray-500 mb-3">Choose the resume profile you wish to share securely with this employer.</p>
+                    {{ form.resume }}
+                    {% if form.resume.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.resume.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 mb-1">Cover Letter</label>
+                    <p class="text-xs text-gray-500 mb-3">Explain why you are the perfect fit for the {{ job.title }} role.</p>
+                    {{ form.cover_letter }}
+                    {% if form.cover_letter.errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.cover_letter.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="glass-panel p-4 rounded-xl flex items-start mt-8">
+                    <svg class="h-6 w-6 text-green-500 mr-3 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">Secure Transmission</p>
+                        <p class="text-xs text-gray-500">Your resume will remain AES-256 encrypted at rest. Only authorized recruiters at {{ job.company.name }} will be permitted to access it.</p>
+                    </div>
+                </div>
+                
+                <div class="pt-6 border-t border-gray-100 flex justify-end space-x-4">
+                    <a href="{% url 'job_detail' job.id %}" class="bg-white border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition shadow-sm">
+                        Cancel
+                    </a>
+                    <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md">
+                        Submit Application
+                    </button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+</style>
+{% endblock %}

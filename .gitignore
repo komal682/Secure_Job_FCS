@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Database files
+*.sqlite3
+
+# Uploaded Media and Test Files
+media/
+*.pdf
+*.txt
+*.png
+*.jpg
+*.jpeg
+
+# Environments
+.env

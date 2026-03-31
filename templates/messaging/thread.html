@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load messaging_extras %}
+
+{% block title %}Chat with {{ other_user.first_name|default:other_user.email }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto z-10 w-full animate-fade-in-up mt-8 mb-16 h-[80vh] flex flex-col">
+    <!-- Header -->
+    <div class="bg-indigo-600 rounded-t-2xl shadow-md p-6 text-white flex items-center justify-between shrink-0">
+        <div class="flex items-center">
+            <a href="{% url 'inbox' %}" class="mr-4 hover:bg-indigo-700 p-2 rounded-full transition bg-opacity-50 bg-indigo-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            </a>
+            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-indigo-600 text-xl font-bold shadow-sm">
+                {% if thread.group_name %}
+                    {{ thread.group_name|make_list|first|upper }}
+                {% else %}
+                    {{ other_user.first_name|default:other_user.email|make_list|first|upper }}
+                {% endif %}
+            </div>
+            <div class="ml-4">
+                {% if thread.group_name %}
+                <h1 class="text-xl font-extrabold tracking-tight">{{ thread.group_name }}</h1>
+                {% else %}
+                <h1 class="text-xl font-extrabold tracking-tight">{{ other_user.first_name }} {{ other_user.last_name }}</h1>
+                {% endif %}
+                <p class="text-indigo-200 text-xs flex items-center mt-1">
+                    <svg class="w-3 h-3 mr-1 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    AES-256 Encrypted Connection
+                </p>
+            </div>
+        </div>
+        <div class="flex space-x-2">
+            <!-- Settings or extra chat actions could go here -->
+        </div>
+    </div>
+
+    <!-- Chat History -->
+    <div class="flex-1 bg-gray-50 overflow-y-auto p-6 border-x border-gray-200 flex flex-col space-y-4" id="chat-container">
+        {% if not chat_history %}
+        <div class="flex items-center justify-center h-full">
+            <div class="text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100">
+                    <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                </div>
+                <h3 class="mt-2 text-sm font-bold text-gray-900">No messages</h3>
+                <p class="mt-1 text-sm text-gray-500">Send an encrypted message to start the conversation.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        {% for msg in chat_history %}
+            {% if msg.is_me %}
+            <!-- Sent Message -->
+            <div class="flex justify-end pt-2">
+                <div class="max-w-xs md:max-w-md bg-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3 shadow-sm relative">
+                    <p class="text-sm whitespace-pre-wrap">{{ msg.text }}</p>
+                    <p class="text-[10px] text-indigo-200 mt-2 text-right">{{ msg.created_at|time:"g:i A" }}</p>
+                </div>
+            </div>
+            {% else %}
+            <!-- Received Message -->
+            <div class="flex justify-start pt-2">
+                <div class="flex items-end">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mr-2 mb-1 shrink-0">
+                        {{ msg.sender.first_name|default:msg.sender.email|make_list|first|upper }}
+                    </div>
+                    <div class="max-w-xs md:max-w-md bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-tl-none px-5 py-3 shadow-sm relative">
+                        <p class="text-sm whitespace-pre-wrap">{{ msg.text }}</p>
+                        <p class="text-[10px] text-gray-400 mt-2">{{ msg.created_at|time:"g:i A" }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Message Input Box -->
+    <div class="bg-white p-4 rounded-b-2xl border border-t-0 border-gray-200 shadow-sm shrink-0">
+        <form method="post" action="." class="flex space-x-4">
+            {% csrf_token %}
+            <textarea name="content" rows="1" class="flex-1 block w-full rounded-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-6 py-3 border resize-none bg-gray-50" placeholder="Type a secure message..." required></textarea>
+            <button type="submit" class="inline-flex items-center justify-center w-12 h-12 rounded-full border border-transparent text-sm font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition shrink-0">
+                <svg class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+            </button>
+        </form>
+        <p class="text-center text-[10px] text-gray-400 mt-3 font-semibold tracking-wider flex items-center justify-center uppercase">
+            <svg class="h-3 w-3 text-gray-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            End-to-End Encrypted via Fernet AES-256
+        </p>
+    </div>
+</div>
+
+<script>
+    // Auto-scroll chat to bottom
+    const chatContainer = document.getElementById('chat-container');
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    // Auto-resize textarea
+    const textarea = document.querySelector('textarea');
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        if (this.scrollHeight > 150) {
+            this.style.overflowY = 'scroll';
+            this.style.height = '150px';
+        } else {
+            this.style.overflowY = 'hidden';
+        }
+    });
+</script>
+
+<style>
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+</style>
+{% endblock %}

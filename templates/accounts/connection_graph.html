@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Connection Graph | Secure Job Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between mb-8">
+        <h2 class="text-3xl font-bold text-gray-900">My Connection Graph</h2>
+        <a href="{% url 'network_dashboard' %}" class="text-indigo-600 font-medium hover:text-indigo-800">&larr; Back to Network</a>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+        <p class="text-gray-600 text-sm">
+            This graph is limited to your first-degree connections and aggregated relationship hints.
+        </p>
+    </div>
+
+    {% if graph_cards %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for card in graph_cards %}
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                    {{ card.user.first_name|default:card.user.email|make_list|first|upper }}
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-900">{{ card.user.first_name }} {{ card.user.last_name }}</h3>
+                    <p class="text-xs text-gray-500">{{ card.user.email }}</p>
+                </div>
+            </div>
+            <div class="space-y-1 text-sm">
+                <p class="text-gray-700"><span class="font-semibold">Mutuals in your network:</span> {{ card.mutual_count }}</p>
+                <p class="text-gray-700"><span class="font-semibold">Their broader connections:</span> {{ card.second_degree_count }}</p>
+            </div>
+            <a href="{% url 'candidate_public_profile' card.user.id %}" class="inline-block mt-4 text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                View profile
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center text-gray-500">
+        No accepted connections yet. Start connecting to build your graph.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

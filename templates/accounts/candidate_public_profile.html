@@ -10,7 +10,7 @@
         <div class="bg-indigo-600 p-8 text-white relative">
             <div class="flex items-start justify-between">
                 <div class="flex items-center">
-                    {% if profile.photo %}
+                    {% if section_visibility.photo and profile.photo %}
                         <img src="{{ profile.photo.url }}" class="w-24 h-24 rounded-full border-4 border-white object-cover shadow-lg mr-6">
                     {% else %}
                         <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center text-indigo-600 text-4xl font-bold shadow-lg mr-6">
@@ -19,7 +19,14 @@
                     {% endif %}
                     <div>
                         <h2 class="text-3xl font-bold">{{ target_user.first_name }} {{ target_user.last_name }}</h2>
-                        <p class="text-indigo-200 mt-1">{{ target_user.email }}</p>
+                        {% if section_visibility.headline and profile.headline %}
+                            <p class="text-indigo-200 mt-1">{{ profile.headline }}</p>
+                        {% else %}
+                            <p class="text-indigo-200 mt-1">{{ target_user.email }}</p>
+                        {% endif %}
+                        {% if section_visibility.location and profile.location %}
+                            <p class="text-indigo-100 text-sm mt-1">{{ profile.location }}</p>
+                        {% endif %}
                         {% if is_connected %}
                             <span class="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 1st Degree Connection
@@ -58,14 +65,29 @@
             <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
                     <h3 class="text-lg font-bold text-gray-900">Professional Summary</h3>
-                    {% if not show_profile_details %}
+                    {% if not section_visibility.summary %}
                         <span class="text-xs text-gray-400 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Hidden</span>
                     {% endif %}
                 </div>
-                {% if show_profile_details %}
+                {% if section_visibility.summary %}
                     <p class="text-gray-700 whitespace-pre-wrap">{{ profile.summary|default:"No summary provided." }}</p>
                 {% else %}
-                    <p class="text-gray-400 italic">This user has restricted their profile to connections only.</p>
+                    <p class="text-gray-400 italic">This section is restricted by privacy settings.</p>
+                {% endif %}
+            </div>
+
+            <!-- Bio -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
+                    <h3 class="text-lg font-bold text-gray-900">Bio</h3>
+                    {% if not section_visibility.bio %}
+                        <span class="text-xs text-gray-400 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Hidden</span>
+                    {% endif %}
+                </div>
+                {% if section_visibility.bio %}
+                    <p class="text-gray-700 whitespace-pre-wrap">{{ profile.bio|default:"No bio provided." }}</p>
+                {% else %}
+                    <p class="text-gray-400 italic">This section is restricted by privacy settings.</p>
                 {% endif %}
             </div>
 
@@ -73,11 +95,11 @@
             <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
                     <h3 class="text-lg font-bold text-gray-900">Education</h3>
-                    {% if not show_profile_details %}
+                    {% if not section_visibility.education %}
                         <span class="text-xs text-gray-400 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Hidden</span>
                     {% endif %}
                 </div>
-                {% if show_profile_details %}
+                {% if section_visibility.education %}
                     {% if profile.educations.all %}
                         <div class="space-y-6">
                             {% for edu in profile.educations.all %}
@@ -104,15 +126,45 @@
                 {% endif %}
             </div>
 
+            <!-- Experience -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
+                    <h3 class="text-lg font-bold text-gray-900">Experience</h3>
+                    {% if not section_visibility.experience %}
+                        <span class="text-xs text-gray-400 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Hidden</span>
+                    {% endif %}
+                </div>
+                {% if section_visibility.experience %}
+                    {% if profile.experiences.all %}
+                        <div class="space-y-6">
+                            {% for exp in profile.experiences.all %}
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-900">{{ exp.company }}</h4>
+                                <p class="text-gray-800 font-medium">{{ exp.title|default:"Role not specified" }}</p>
+                                <p class="text-sm text-gray-500 mt-1">{{ exp.start_month }} {{ exp.start_year }} - {% if exp.end_year %}{{ exp.end_month }} {{ exp.end_year }}{% else %}Present{% endif %}</p>
+                                {% if exp.description %}
+                                    <p class="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{{ exp.description }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 italic">No experience history provided.</p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-gray-400 italic">Experience details are private.</p>
+                {% endif %}
+            </div>
+
             <!-- Skills -->
             <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                 <div class="flex items-center justify-between mb-4 border-b border-gray-100 pb-2">
                     <h3 class="text-lg font-bold text-gray-900">Skills</h3>
-                    {% if not show_profile_details %}
+                    {% if not section_visibility.skills %}
                         <span class="text-xs text-gray-400 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> Hidden</span>
                     {% endif %}
                 </div>
-                {% if show_profile_details %}
+                {% if section_visibility.skills %}
                     <div class="flex flex-wrap gap-2">
                         {% if profile.skills %}
                             {% for skill in profile.skills.split %}

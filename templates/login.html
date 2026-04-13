@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="flex justify-center z-10">
     <div class="glass-panel rounded-2xl shadow-xl w-full max-w-md p-8">
@@ -9,16 +8,13 @@
                 Login to your account
             </p>
         </div>
-
         <form method="post" class="space-y-6">
             {% csrf_token %}
-
             {% if form.non_field_errors %}
             <div class="bg-red-50 text-red-600 p-3 rounded text-sm mb-4">
                 {{ form.non_field_errors }}
             </div>
             {% endif %}
-
             <div>
                 <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700">Email
                     Address</label>
@@ -29,7 +25,6 @@
                 <p class="text-red-500 text-xs mt-1">{{ form.email.errors.0 }}</p>
                 {% endif %}
             </div>
-
             <div>
                 <label for="{{ form.password.id_for_label }}"
                     class="block text-sm font-medium text-gray-700">Password</label>
@@ -40,7 +35,6 @@
                 <p class="text-red-500 text-xs mt-1">{{ form.password.errors.0 }}</p>
                 {% endif %}
             </div>
-
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
                     <input id="remember-me" name="remember-me" type="checkbox"
@@ -51,7 +45,6 @@
                     <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">Forgot password?</a>
                 </div>
             </div>
-
             <div>
                 <button type="submit"
                     class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
@@ -59,7 +52,6 @@
                 </button>
             </div>
         </form>
-
         <div class="mt-6 text-center text-sm text-gray-600">
             Don't have an account? <a href="{% url 'role_selection' action='register' %}"
                 class="font-medium text-indigo-600 hover:text-indigo-500">Sign up here</a>

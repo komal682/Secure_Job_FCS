@@ -1,6 +1,5 @@
 from cryptography.fernet import Fernet
 from django.conf import settings
-
 def _get_fernet():
     """Retrieve the Fernet instance using the dedicated messaging key."""
     # Ensure the key is bytes, standardizing from environment config
@@ -8,14 +7,12 @@ def _get_fernet():
     if isinstance(key, str):
         key = key.encode('utf-8')
     return Fernet(key)
-
 def encrypt_message(text: str) -> bytes:
     """Encrypt a plain text string to Fernet AES-256 bytes."""
     if not text:
         return b''
     f = _get_fernet()
     return f.encrypt(text.encode('utf-8'))
-
 def decrypt_message(token) -> str:
     """Decrypt Fernet AES-256 bytes back to a plain text string."""
     if not token:

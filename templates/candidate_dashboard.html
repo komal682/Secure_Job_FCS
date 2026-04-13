@@ -1,7 +1,5 @@
 {% extends 'base.html' %}
-
 {% block title %}Candidate Dashboard | Secure Job Portal{% endblock %}
-
 {% block content %}
 <div class="max-w-6xl mx-auto z-10 w-full animate-fade-in-up">
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
@@ -9,7 +7,6 @@
             <!-- Decorative circle -->
             <div class="absolute -top-10 -right-10 w-40 h-40 bg-white opacity-10 rounded-full blur-xl"></div>
             <div class="absolute bottom-0 -left-10 w-32 h-32 bg-indigo-900 opacity-20 rounded-full blur-md"></div>
-
             <div class="relative z-10 flex items-center justify-between">
                 <div>
                     <h2 class="text-3xl font-bold mb-2">Welcome, {{ user.first_name|default:user.email }}!</h2>
@@ -27,10 +24,8 @@
                 </div>
             </div>
         </div>
-
         <div class="p-8">
             <h3 class="text-xl font-semibold text-gray-800 mb-6">Your Overview</h3>
-
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Stat Card 1 -->
                 <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-md transition cursor-pointer">
@@ -47,7 +42,6 @@
                     <p class="text-3xl font-bold text-gray-900">{{ request.user.applications.count }}</p>
                     <a href="{% url 'candidate_applications' %}" class="text-sm font-bold text-indigo-600 hover:text-indigo-800 mt-2 inline-block">View tracking &rarr;</a>
                 </div>
-
                 <!-- Stat Card 2 -->
                 <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-md transition cursor-pointer">
                     <div class="flex items-center justify-between mb-4">
@@ -69,7 +63,6 @@
                         Start exploring
                     </p>
                 </div>
-
                 <!-- Stat Card 3 -->
                 <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 hover:shadow-md transition cursor-pointer">
                     <div class="flex items-center justify-between mb-4">
@@ -88,7 +81,6 @@
                     <a href="{% url 'network_dashboard' %}" class="text-sm font-bold text-green-600 hover:text-green-800 mt-2 inline-block">See who viewed you &rarr;</a>
                 </div>
             </div>
-
             <!-- React Profile Mount Point -->
             <div id="react-profile-root" class="mt-8">
                 <!-- Loading state before React mounts -->
@@ -97,7 +89,6 @@
                     <div class="h-48 bg-gray-200 rounded-xl w-full"></div>
                 </div>
             </div>
-
             {% if recommended_jobs %}
             <div class="mt-10 border-t border-gray-100 pt-8">
                 <div class="flex items-center justify-between mb-6">
@@ -126,7 +117,6 @@
                 </div>
             </div>
             {% endif %}
-
             <div class="mt-8 flex flex-wrap justify-center gap-4">
                 <a href="{% url 'job_board' %}"
                     class="bg-indigo-600 text-white px-5 py-3 rounded-lg font-medium hover:bg-indigo-700 transition shadow-md flex items-center">
@@ -153,36 +143,29 @@
         </div>
     </div>
 </div>
-
 <style>
     @keyframes fadeInUp {
         from {
             opacity: 0;
             transform: translateY(20px);
         }
-
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
-
     .animate-fade-in-up {
         animation: fadeInUp 0.5s ease-out forwards;
     }
 </style>
-
 <!-- Load React, ReactDOM, and Babel from CDN -->
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
-
 <!-- Inject CSRF Token for React fetches -->
 <script>
     window.CSRF_TOKEN = "{{ csrf_token }}";
 </script>
-
 <!-- Load modular profile logic -->
 {% include 'accounts/react_profile.html' %}
-
 {% endblock %}

@@ -6,9 +6,14 @@
 <div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between mb-8">
         <h2 class="text-3xl font-bold text-gray-900">Professional Network</h2>
-        <a href="{% url 'candidate_dashboard' %}" class="text-indigo-600 font-medium hover:text-indigo-800 flex items-center">
-            &larr; Back to Dashboard
-        </a>
+        <div class="flex items-center gap-4">
+            <a href="{% url 'connection_graph' %}" class="text-indigo-600 font-medium hover:text-indigo-800 flex items-center">
+                View Connection Graph
+            </a>
+            <a href="{% url 'candidate_dashboard' %}" class="text-indigo-600 font-medium hover:text-indigo-800 flex items-center">
+                &larr; Back to Dashboard
+            </a>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -137,7 +142,7 @@
                 <svg class="w-12 h-12 mx-auto text-indigo-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                 <h3 class="font-bold mb-2">Privacy Settings</h3>
                 <p class="text-sm text-indigo-200 mb-4">Control who can see your summary, education, and skills. Opt-out of profile view tracking at any time.</p>
-                <a href="{% url 'candidate_profile_setup' %}" class="inline-block bg-white text-indigo-600 px-4 py-2 rounded-md text-sm font-bold shadow-sm hover:bg-gray-50">Manage Privacy</a>
+                <a href="{% url 'candidate_dashboard' %}" class="inline-block bg-white text-indigo-600 px-4 py-2 rounded-md text-sm font-bold shadow-sm hover:bg-gray-50">Manage Privacy</a>
             </div>
         </div>
     </div>

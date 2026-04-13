@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-
 urlpatterns = [
     path('', views.home, name='home'),
     path('role-selection/<str:action>/', views.role_selection, name='role_selection'),
@@ -13,13 +12,17 @@ urlpatterns = [
     # React Profile Modular API Routes
     path('api/profile/', views.api_get_profile, name='api_get_profile'),
     path('api/profile/update/', views.api_update_profile, name='api_update_profile'),
+    path('api/profile/photo/', views.api_upload_profile_photo, name='api_upload_profile_photo'),
     path('api/profile/education/', views.api_education, name='api_add_education'),
     path('api/profile/education/<int:edu_id>/', views.api_education, name='api_modify_education'),
+    path('api/profile/experience/', views.api_experience, name='api_add_experience'),
+    path('api/profile/experience/<int:exp_id>/', views.api_experience, name='api_modify_experience'),
     
     path('dashboard/employer/', views.employer_dashboard, name='employer_dashboard'),
     
     # Professional Networking (Section A)
     path('network/', views.network_dashboard, name='network_dashboard'),
+    path('network/graph/', views.connection_graph, name='connection_graph'),
     path('candidate/<int:profile_id>/', views.candidate_public_profile, name='candidate_public_profile'),
     path('network/connect/<int:to_user_id>/', views.send_connection_request, name='send_connection_request'),
     path('network/manage/<int:req_id>/<str:action>/', views.manage_connection_request, name='manage_connection_request'),

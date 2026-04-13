@@ -8,9 +8,8 @@ import qrcode
 import qrcode.image.svg
 from io import BytesIO
 from django.core.cache import cache
-from .models import User, SecurityAuditLog
+from .models import User, SecurityAuditLog, CandidateProfile, Education, Experience
 from .forms import CandidateRegistrationForm, EmployerRegistrationForm, LoginForm
-
 def home(request):
     if request.user.is_authenticated:
         if request.user.role == User.Role.CANDIDATE:
@@ -18,14 +17,11 @@ def home(request):
         elif request.user.role == User.Role.EMPLOYER:
             return redirect('employer_dashboard')
     return render(request, 'home.html')
-
 def role_selection(request, action):
     # action is either 'login' or 'register'
     return render(request, 'role_selection.html', {'action': action})
-
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
-
 def register(request, role):
     if request.user.is_authenticated:
         return redirect('home')
@@ -71,11 +67,9 @@ def register(request, role):
         form = FormClass()
         
     return render(request, 'register.html', {'form': form, 'role': role})
-
 def user_login(request):
     if request.user.is_authenticated:
         return redirect('home')
-
     ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
     cache_key = f'bf_lock_{ip}'
     attempts = cache.get(cache_key, 0)
@@ -84,7 +78,6 @@ def user_login(request):
         form = LoginForm()
         form.add_error(None, 'SECURITY LOCK: IP blocked for 15 minutes due to brute force.')
         return render(request, 'login.html', {'form': form})
-
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -118,13 +111,10 @@ def user_login(request):
                     form.add_error(None, f'Invalid credentials. Attempt {attempts}/5.')
     else:
         form = LoginForm()
-
     return render(request, 'login.html', {'form': form})
-
 def user_logout(request):
     logout(request)
     return redirect('home')
-
 def totp_setup(request):
     user_id = request.session.get('totp_setup_user_id')
     if not user_id:
@@ -153,14 +143,11 @@ def totp_setup(request):
     qr_data = f"data:image/png;base64,{b64_img}"
     
     return render(request, 'totp_setup.html', {'qr_data': qr_data, 'secret': user.totp_secret})
-
 def totp_verify(request):
     user_id = request.session.get('pre_login_user_id')
     if not user_id:
         return redirect('home')
-
     user = User.objects.get(id=user_id)
-
     if request.method == 'POST':
         token = request.POST.get('token', '').replace(' ', '').strip()
         totp = pyotp.TOTP(user.totp_secret)
@@ -170,12 +157,9 @@ def totp_verify(request):
             return redirect(f'{user.role.lower()}_dashboard')
         else:
             messages.error(request, 'Invalid TOTP code. Please try again.')
-
     return render(request, 'totp_verify.html')
-
 from django.http import JsonResponse
 import json
-
 @login_required
 def api_get_profile(request):
     if request.user.role != User.Role.CANDIDATE:
@@ -195,15 +179,38 @@ def api_get_profile(request):
         'end_year': e.end_year,
         'grade': e.grade
     } for e in educations]
+    experiences = profile.experiences.all()
+    exp_list = [{
+        'id': exp.id,
+        'company': exp.company,
+        'title': exp.title,
+        'start_month': exp.start_month,
+        'start_year': exp.start_year,
+        'end_month': exp.end_month,
+        'end_year': exp.end_year,
+        'description': exp.description,
+    } for exp in experiences]
     
     return JsonResponse({
+        'photo': profile.photo.url if profile.photo else '',
+        'headline': profile.headline,
+        'location': profile.location,
+        'bio': profile.bio,
         'summary': profile.summary,
         'skills': profile.skills,
         'visibility': profile.visibility,
+        'privacy_photo': profile.privacy_photo,
+        'privacy_headline': profile.privacy_headline,
+        'privacy_location': profile.privacy_location,
+        'privacy_summary': profile.privacy_summary,
+        'privacy_bio': profile.privacy_bio,
+        'privacy_education': profile.privacy_education,
+        'privacy_experience': profile.privacy_experience,
+        'privacy_skills': profile.privacy_skills,
         'opt_out_view_tracking': profile.opt_out_view_tracking,
-        'educations': edu_list
+        'educations': edu_list,
+        'experiences': exp_list
     })
-
 @login_required
 def api_update_profile(request):
     """Updates summary, skills, or visibility fields."""
@@ -218,14 +225,37 @@ def api_update_profile(request):
             profile.summary = data['summary']
         if 'skills' in data:
             profile.skills = data['skills']
+        if 'headline' in data:
+            profile.headline = data['headline']
+        if 'location' in data:
+            profile.location = data['location']
+        if 'bio' in data:
+            profile.bio = data['bio']
         if 'visibility' in data:
             profile.visibility = data['visibility']
+        if 'privacy_photo' in data:
+            profile.privacy_photo = data['privacy_photo']
+        if 'privacy_headline' in data:
+            profile.privacy_headline = data['privacy_headline']
+        if 'privacy_location' in data:
+            profile.privacy_location = data['privacy_location']
+        if 'privacy_summary' in data:
+            profile.privacy_summary = data['privacy_summary']
+        if 'privacy_bio' in data:
+            profile.privacy_bio = data['privacy_bio']
+        if 'privacy_education' in data:
+            profile.privacy_education = data['privacy_education']
+        if 'privacy_experience' in data:
+            profile.privacy_experience = data['privacy_experience']
+        if 'privacy_skills' in data:
+            profile.privacy_skills = data['privacy_skills']
+        if 'opt_out_view_tracking' in data:
+            profile.opt_out_view_tracking = bool(data['opt_out_view_tracking'])
             
         profile.save()
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
-
 @login_required
 def api_education(request, edu_id=None):
     if request.user.role != User.Role.CANDIDATE:
@@ -273,6 +303,64 @@ def api_education(request, edu_id=None):
         
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+
+@login_required
+def api_experience(request, exp_id=None):
+    if request.user.role != User.Role.CANDIDATE:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    profile = request.user.candidate_profile
+
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        exp = Experience.objects.create(
+            profile=profile,
+            company=data.get('company', ''),
+            title=data.get('title', ''),
+            start_month=data.get('start_month', ''),
+            start_year=data.get('start_year', ''),
+            end_month=data.get('end_month', ''),
+            end_year=data.get('end_year', ''),
+            description=data.get('description', ''),
+        )
+        return JsonResponse({'status': 'success', 'id': exp.id})
+
+    if request.method == 'PUT':
+        if not exp_id:
+            return JsonResponse({'error': 'Missing ID'}, status=400)
+        data = json.loads(request.body)
+        exp = get_object_or_404(Experience, id=exp_id, profile=profile)
+        exp.company = data.get('company', exp.company)
+        exp.title = data.get('title', exp.title)
+        exp.start_month = data.get('start_month', exp.start_month)
+        exp.start_year = data.get('start_year', exp.start_year)
+        exp.end_month = data.get('end_month', exp.end_month)
+        exp.end_year = data.get('end_year', exp.end_year)
+        exp.description = data.get('description', exp.description)
+        exp.save()
+        return JsonResponse({'status': 'success'})
+
+    if request.method == 'DELETE':
+        if not exp_id:
+            return JsonResponse({'error': 'Missing ID'}, status=400)
+        exp = get_object_or_404(Experience, id=exp_id, profile=profile)
+        exp.delete()
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@login_required
+def api_upload_profile_photo(request):
+    if request.user.role != User.Role.CANDIDATE or request.method != 'POST':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    profile, _ = CandidateProfile.objects.get_or_create(candidate=request.user)
+    photo = request.FILES.get('photo')
+    if not photo:
+        return JsonResponse({'error': 'No file uploaded'}, status=400)
+    profile.photo = photo
+    profile.save()
+    return JsonResponse({'status': 'success', 'photo': profile.photo.url if profile.photo else ''})
 @login_required
 def candidate_dashboard(request):
     if request.user.role != User.Role.CANDIDATE:
@@ -280,10 +368,8 @@ def candidate_dashboard(request):
         
     from jobs.models import JobPosting
     from resume.models import Resume
-
     latest_resume = Resume.objects.filter(user=request.user).order_by('-uploaded_at').first()
     recommended_jobs = []
-
     if latest_resume and latest_resume.parsed_keywords:
         # Standardize keywords from resume
         resume_words = set(w.strip() for w in latest_resume.parsed_keywords.split() if len(w) > 3)
@@ -301,17 +387,13 @@ def candidate_dashboard(request):
         # Sort by best match
         job_scores.sort(key=lambda x: x[0], reverse=True)
         recommended_jobs = [{"score": score, "job": job} for score, job in job_scores[:3]]
-
     return render(request, 'candidate_dashboard.html', {'recommended_jobs': recommended_jobs})
-
 from .models import Connection, ProfileView
 from django.db.models import Q
-
 @login_required
 def network_dashboard(request):
     if request.user.role != User.Role.CANDIDATE:
         return redirect('home')
-
     # Connections
     connections_sent = Connection.objects.filter(sender=request.user, status=Connection.Status.ACCEPTED)
     connections_received = Connection.objects.filter(receiver=request.user, status=Connection.Status.ACCEPTED)
@@ -354,7 +436,6 @@ def network_dashboard(request):
         'has_opted_out': has_opted_out,
         'opted_out_count': opted_out_count
     })
-
 @login_required
 def candidate_public_profile(request, profile_id):
     target_user = get_object_or_404(User, id=profile_id, role=User.Role.CANDIDATE)
@@ -382,7 +463,6 @@ def candidate_public_profile(request, profile_id):
             connection_status = conn.status
             if conn.status == Connection.Status.ACCEPTED:
                 is_connected = True
-
     # Assess Privacy Filters
     def is_visible(privacy_level):
         if privacy_level == CandidateProfile.PrivacyLevel.PUBLIC:
@@ -394,18 +474,27 @@ def candidate_public_profile(request, profile_id):
         if request.user.role == User.Role.EMPLOYER: 
             return True # Employers can see "connections-only" elements inherently if they seek profiles
         return False
-        
+
+    section_visibility = {
+        'photo': is_visible(profile.privacy_photo),
+        'headline': is_visible(profile.privacy_headline),
+        'location': is_visible(profile.privacy_location),
+        'summary': is_visible(profile.privacy_summary),
+        'bio': is_visible(profile.privacy_bio),
+        'education': is_visible(profile.privacy_education),
+        'experience': is_visible(profile.privacy_experience),
+        'skills': is_visible(profile.privacy_skills),
+    }
+
     context = {
         'target_user': target_user,
         'profile': profile,
         'connection_status': connection_status,
         'is_connected': is_connected,
-        
-        'show_profile_details': is_visible(profile.visibility),
+        'section_visibility': section_visibility,
     }
     
     return render(request, 'accounts/candidate_public_profile.html', context)
-
 @login_required
 def send_connection_request(request, to_user_id):
     target_user = get_object_or_404(User, id=to_user_id)
@@ -415,7 +504,6 @@ def send_connection_request(request, to_user_id):
     Connection.objects.get_or_create(sender=request.user, receiver=target_user)
     messages.success(request, "Connection request sent.")
     return redirect('candidate_public_profile', profile_id=to_user_id)
-
 @login_required
 def manage_connection_request(request, req_id, action):
     conn = get_object_or_404(Connection, id=req_id, receiver=request.user)
@@ -428,7 +516,6 @@ def manage_connection_request(request, req_id, action):
         messages.info(request, "Connection request declined.")
         
     return redirect('network_dashboard')
-
 @login_required
 def remove_connection(request, user_id):
     target_user = get_object_or_404(User, id=user_id)
@@ -439,23 +526,57 @@ def remove_connection(request, user_id):
     messages.success(request, "Connection removed.")
     return redirect('network_dashboard')
 
+
+@login_required
+def connection_graph(request):
+    if request.user.role != User.Role.CANDIDATE:
+        return redirect('home')
+
+    sent = Connection.objects.filter(sender=request.user, status=Connection.Status.ACCEPTED).select_related('receiver')
+    received = Connection.objects.filter(receiver=request.user, status=Connection.Status.ACCEPTED).select_related('sender')
+
+    direct_connections = []
+    for conn in sent:
+        direct_connections.append(conn.receiver)
+    for conn in received:
+        direct_connections.append(conn.sender)
+
+    direct_ids = {u.id for u in direct_connections}
+    graph_cards = []
+    for conn_user in direct_connections:
+        conn_sent = Connection.objects.filter(sender=conn_user, status=Connection.Status.ACCEPTED).select_related('receiver')
+        conn_received = Connection.objects.filter(receiver=conn_user, status=Connection.Status.ACCEPTED).select_related('sender')
+
+        second_degree_ids = set()
+        for edge in conn_sent:
+            if edge.receiver_id != request.user.id:
+                second_degree_ids.add(edge.receiver_id)
+        for edge in conn_received:
+            if edge.sender_id != request.user.id:
+                second_degree_ids.add(edge.sender_id)
+
+        mutual_count = len(second_degree_ids.intersection(direct_ids))
+        graph_cards.append({
+            'user': conn_user,
+            'mutual_count': mutual_count,
+            'second_degree_count': len(second_degree_ids),
+        })
+
+    return render(request, 'accounts/connection_graph.html', {'graph_cards': graph_cards})
 @login_required
 def employer_dashboard(request):
     if request.user.role != User.Role.EMPLOYER:
         return redirect('home')
     return render(request, 'employer_dashboard.html')
-
 def admin_required(view_func):
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated or request.user.role != User.Role.ADMIN:
             raise PermissionDenied
         return view_func(request, *args, **kwargs)
     return _wrapped_view
-
 def admin_login(request):
     if request.user.is_authenticated and request.user.role == User.Role.ADMIN:
         return redirect('admin_dashboard')
-
     ip = request.META.get('REMOTE_ADDR', '0.0.0.0')
     cache_key = f'bf_lock_admin_{ip}'
     attempts = cache.get(cache_key, 0)
@@ -464,7 +585,6 @@ def admin_login(request):
         form = LoginForm()
         form.add_error(None, 'SECURITY LOCK: IP blocked for 15 minutes due to brute force.')
         return render(request, 'admin/admin_login.html', {'form': form})
-
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -495,9 +615,7 @@ def admin_login(request):
                     form.add_error(None, f'Invalid admin credentials. Attempt {attempts}/5.')
     else:
         form = LoginForm()
-
     return render(request, 'admin/admin_login.html', {'form': form})
-
 @admin_required
 def admin_dashboard(request):
     from .models import SecurityAuditLog
@@ -512,7 +630,6 @@ def admin_dashboard(request):
             log.is_tampered = False
             
     return render(request, 'admin/admin_dashboard.html', {'users': users, 'audit_logs': audit_logs})
-
 @admin_required
 def moderate_user(request, user_id, action):
     if request.method == 'POST':

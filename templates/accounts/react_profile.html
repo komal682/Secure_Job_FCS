@@ -1,25 +1,46 @@
 <script type="text/babel">
 const { useState, useEffect } = React;
 
-// --- COMMON COMPONENTS ---
+const PRIVACY_OPTIONS = [
+    { value: "PUBLIC", label: "Public" },
+    { value: "CONNECTIONS", label: "Connections Only" },
+    { value: "PRIVATE", label: "Private" },
+];
 
 const Modal = ({ isOpen, onClose, title, children }) => {
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = prev;
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900 bg-opacity-50 transition-opacity">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                    <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 focus:outline-none">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    const modalNode = (
+        <div onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border border-gray-100 animate-modal-in">
+                <div className="px-7 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
+                    <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{title}</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full p-2 transition focus:outline-none">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
-                <div className="p-6 overflow-y-auto">
-                    {children}
-                </div>
+                <div className="px-7 py-6 overflow-y-auto">{children}</div>
             </div>
+            <style>{`
+                @keyframes modalIn {
+                    from { opacity: 0; transform: scale(0.95) translateY(4px); }
+                    to { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                .animate-modal-in {
+                    animation: modalIn 180ms ease-out;
+                }
+            `}</style>
         </div>
     );
+    return ReactDOM.createPortal(modalNode, document.body);
 };
 
 const ProfileSectionCard = ({ title, children, onEdit, onAdd }) => (
@@ -33,47 +54,130 @@ const ProfileSectionCard = ({ title, children, onEdit, onAdd }) => (
                     </button>
                 )}
                 {onEdit && (
-                    <button onClick={onEdit} className="hover:text-indigo-600 transition focus:outline-none" title={`Edit ${title}`}>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    <button onClick={onEdit} className="inline-flex items-center gap-1 text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 rounded-md hover:bg-indigo-100 transition focus:outline-none" title={`Edit ${title}`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        <span className="text-xs font-semibold">Edit</span>
                     </button>
                 )}
             </div>
         </div>
-        <div>
-            {children}
-        </div>
+        <div>{children}</div>
     </div>
 );
 
-// --- MODALS ---
+const SaveFooter = ({ onClose, onSave, saving, disabled }) => (
+    <div className="mt-6 flex justify-end">
+        <button onClick={onClose} className="px-4 py-2.5 text-gray-700 hover:text-gray-900 border border-gray-300 bg-white rounded-lg mr-2 transition">Cancel</button>
+        <button disabled={saving || disabled} onClick={onSave} className="bg-indigo-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50 transition shadow-sm">
+            {saving ? "Saving..." : "Save Changes"}
+        </button>
+    </div>
+);
+
+const EditBasicsModal = ({ isOpen, onClose, profile, onSave, onPhotoSave }) => {
+    const [form, setForm] = useState({ headline: "", location: "", bio: "" });
+    const [photoFile, setPhotoFile] = useState(null);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const [previewUrl, setPreviewUrl] = useState("");
+    useEffect(() => {
+        setForm({
+            headline: (profile && profile.headline) || "",
+            location: (profile && profile.location) || "",
+            bio: (profile && profile.bio) || "",
+        });
+        setPhotoFile(null);
+        setPreviewUrl((profile && profile.photo) || "");
+    }, [profile, isOpen]);
+    const handleSave = async () => {
+        setSaving(true);
+        setError("");
+        try {
+            const res = await onSave(form);
+            if (!res || !res.ok) {
+                setError("Failed to update profile basics.");
+                return;
+            }
+            if (photoFile) {
+                const photoRes = await onPhotoSave(photoFile);
+                if (!photoRes || !photoRes.ok) {
+                    setError("Basics saved, but photo upload failed.");
+                    return;
+                }
+            }
+            onClose();
+        } finally {
+            setSaving(false);
+        }
+    };
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile Basics">
+            <div className="space-y-5">
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Profile Photo</label>
+                    <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center">
+                            {previewUrl ? (
+                                <img src={previewUrl} alt="Profile preview" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-xs text-gray-500">No Photo</span>
+                            )}
+                        </div>
+                        <div>
+                            <label className="inline-flex items-center px-4 py-2.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 font-medium text-sm hover:bg-indigo-100 cursor-pointer transition">
+                                {previewUrl ? "Change Photo" : "Upload Photo"}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        const file = (e.target.files && e.target.files[0]) || null;
+                                        setPhotoFile(file);
+                                        if (file) setPreviewUrl(URL.createObjectURL(file));
+                                    }}
+                                />
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Headline</label>
+                    <input className="w-full rounded-lg border border-gray-200 p-3 h-12 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition" value={form.headline} onChange={(e) => setForm({ ...form, headline: e.target.value })} placeholder="e.g. Full Stack Developer" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Location</label>
+                    <input className="w-full rounded-lg border border-gray-200 p-3 h-12 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="e.g. Bengaluru, India" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Bio</label>
+                    <textarea className="w-full rounded-lg border border-gray-200 p-3 min-h-[130px] focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Write a short bio..." />
+                </div>
+            </div>
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            <SaveFooter onClose={onClose} onSave={handleSave} saving={saving} />
+        </Modal>
+    );
+};
 
 const EditSummaryModal = ({ isOpen, onClose, summary, onSave }) => {
     const [text, setText] = useState(summary || "");
     const [saving, setSaving] = useState(false);
-    
+    const [error, setError] = useState("");
     useEffect(() => { setText(summary || ""); }, [summary, isOpen]);
-
     const handleSave = async () => {
         setSaving(true);
-        await onSave({ summary: text });
-        setSaving(false);
-        onClose();
+        setError("");
+        try {
+            const res = await onSave({ summary: text });
+            if (res && res.ok) onClose();
+            else setError("Failed to save summary.");
+        } finally { setSaving(false); }
     };
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Professional Summary">
-            <textarea 
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[150px] p-3 border"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="A short 2-3 sentence overview of your career goals."
-            />
-            <div className="mt-6 flex justify-end">
-                <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-900 border border-transparent mr-2">Cancel</button>
-                <button disabled={saving} onClick={handleSave} className="bg-indigo-600 text-white px-4 py-2 rounded font-medium hover:bg-indigo-700 disabled:opacity-50">
-                    {saving ? 'Saving...' : 'Save'}
-                </button>
-            </div>
+            <textarea className="w-full rounded-md border-gray-300 min-h-[150px] p-3 border" value={text} onChange={(e) => setText(e.target.value)} />
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            <SaveFooter onClose={onClose} onSave={handleSave} saving={saving} />
         </Modal>
     );
 };
@@ -81,279 +185,296 @@ const EditSummaryModal = ({ isOpen, onClose, summary, onSave }) => {
 const EditSkillsModal = ({ isOpen, onClose, skills, onSave }) => {
     const [text, setText] = useState(skills || "");
     const [saving, setSaving] = useState(false);
-    
+    const [error, setError] = useState("");
     useEffect(() => { setText(skills || ""); }, [skills, isOpen]);
-
     const handleSave = async () => {
         setSaving(true);
-        await onSave({ skills: text });
-        setSaving(false);
-        onClose();
+        setError("");
+        try {
+            const res = await onSave({ skills: text });
+            if (res && res.ok) onClose();
+            else setError("Failed to save skills.");
+        } finally { setSaving(false); }
     };
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Edit Skills">
-            <textarea 
-                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 min-h-[150px] p-3 border"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Python, SQL, React, ..."
-            />
-            <p className="mt-1 text-sm text-gray-500">Separated by commas.</p>
-            <div className="mt-6 flex justify-end">
-                <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-900 border border-transparent mr-2">Cancel</button>
-                <button disabled={saving} onClick={handleSave} className="bg-indigo-600 text-white px-4 py-2 rounded font-medium hover:bg-indigo-700 disabled:opacity-50">
-                    {saving ? 'Saving...' : 'Save'}
-                </button>
-            </div>
+            <textarea className="w-full rounded-md border-gray-300 min-h-[120px] p-3 border" value={text} onChange={(e) => setText(e.target.value)} />
+            <p className="mt-1 text-sm text-gray-500">Separate by commas.</p>
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            <SaveFooter onClose={onClose} onSave={handleSave} saving={saving} />
         </Modal>
     );
 };
 
-const EditEducationModal = ({ isOpen, onClose, educationItem, onSave, onDelete }) => {
-    const [formData, setFormData] = useState({
-        school: "", degree: "", field_of_study: "", start_month: "", start_year: "", end_month: "", end_year: "", grade: ""
-    });
+const EditEducationModal = ({ isOpen, onClose, item, onSave, onDelete }) => {
+    const [form, setForm] = useState({ school: "", degree: "", field_of_study: "", start_year: "", end_year: "", grade: "" });
     const [saving, setSaving] = useState(false);
-    
+    const [error, setError] = useState("");
     useEffect(() => {
-        if (educationItem) {
-            setFormData(educationItem);
-        } else {
-            setFormData({ school: "", degree: "", field_of_study: "", start_month: "", start_year: "", end_month: "", end_year: "", grade: "" });
-        }
-    }, [educationItem, isOpen]);
-
-    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
+        setForm(item || { school: "", degree: "", field_of_study: "", start_year: "", end_year: "", grade: "" });
+    }, [item, isOpen]);
     const handleSave = async () => {
         setSaving(true);
-        await onSave(formData);
-        setSaving(false);
-        onClose();
+        setError("");
+        try {
+            const res = await onSave(form);
+            if (res && res.ok) onClose();
+            else setError("Failed to save education.");
+        } finally { setSaving(false); }
     };
-    
     const handleDelete = async () => {
-        if (confirm('Delete this education entry?')) {
-            setSaving(true);
-            await onDelete(formData.id);
-            setSaving(false);
-            onClose();
-        }
+        if (!item || !item.id || !confirm("Delete this education entry?")) return;
+        setSaving(true);
+        setError("");
+        try {
+            const res = await onDelete(item.id);
+            if (res && res.ok) onClose();
+            else setError("Failed to delete education.");
+        } finally { setSaving(false); }
     };
-
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={educationItem ? "Edit Education" : "Add Education"}>
+        <Modal isOpen={isOpen} onClose={onClose} title={item && item.id ? "Edit Education" : "Add Education"}>
             <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">School / University *</label>
-                    <input type="text" name="school" value={formData.school} onChange={handleChange} className="w-full rounded border-gray-300 p-2 border focus:border-indigo-500 focus:ring-indigo-500" required />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Degree</label>
-                    <input type="text" name="degree" value={formData.degree} onChange={handleChange} className="w-full rounded border-gray-300 p-2 border focus:border-indigo-500 focus:ring-indigo-500" />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Field of Study</label>
-                    <input type="text" name="field_of_study" value={formData.field_of_study} onChange={handleChange} className="w-full rounded border-gray-300 p-2 border focus:border-indigo-500 focus:ring-indigo-500" />
-                </div>
-                
+                <input name="school" className="w-full rounded border-gray-300 p-2 border" placeholder="School / University *" value={form.school || ""} onChange={(e) => setForm({ ...form, school: e.target.value })} />
+                <input name="degree" className="w-full rounded border-gray-300 p-2 border" placeholder="Degree" value={form.degree || ""} onChange={(e) => setForm({ ...form, degree: e.target.value })} />
+                <input name="field_of_study" className="w-full rounded border-gray-300 p-2 border" placeholder="Field of Study" value={form.field_of_study || ""} onChange={(e) => setForm({ ...form, field_of_study: e.target.value })} />
                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Year</label>
-                        <input type="text" name="start_year" value={formData.start_year} onChange={handleChange} placeholder="e.g. 2019" className="w-full rounded border-gray-300 p-2 border focus:border-indigo-500 focus:ring-indigo-500" />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">End Year</label>
-                        <input type="text" name="end_year" value={formData.end_year} onChange={handleChange} placeholder="e.g. 2023 (Leave blank if present)" className="w-full rounded border-gray-300 p-2 border focus:border-indigo-500 focus:ring-indigo-500" />
-                    </div>
+                    <input name="start_year" className="w-full rounded border-gray-300 p-2 border" placeholder="Start Year" value={form.start_year || ""} onChange={(e) => setForm({ ...form, start_year: e.target.value })} />
+                    <input name="end_year" className="w-full rounded border-gray-300 p-2 border" placeholder="End Year" value={form.end_year || ""} onChange={(e) => setForm({ ...form, end_year: e.target.value })} />
                 </div>
-                
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
-                    <input type="text" name="grade" value={formData.grade} onChange={handleChange} placeholder="e.g. 85%" className="w-full rounded border-gray-300 p-2 border focus:border-indigo-500 focus:ring-indigo-500" />
-                </div>
+                <input name="grade" className="w-full rounded border-gray-300 p-2 border" placeholder="Grade" value={form.grade || ""} onChange={(e) => setForm({ ...form, grade: e.target.value })} />
             </div>
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
             <div className="mt-6 flex justify-between">
-                <div>
-                    {educationItem && (
-                        <button disabled={saving} onClick={handleDelete} className="text-red-600 hover:text-red-800 font-medium px-2 py-2">Delete</button>
-                    )}
-                </div>
-                <div className="flex">
-                    <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-900 border border-transparent mr-2">Cancel</button>
-                    <button disabled={saving || !formData.school} onClick={handleSave} className="bg-indigo-600 text-white px-4 py-2 rounded font-medium hover:bg-indigo-700 disabled:opacity-50">
-                        {saving ? 'Saving...' : 'Save'}
-                    </button>
-                </div>
+                <div>{item && item.id && <button disabled={saving} onClick={handleDelete} className="text-red-600 hover:text-red-800 font-medium px-2 py-2">Delete</button>}</div>
+                <SaveFooter onClose={onClose} onSave={handleSave} saving={saving} disabled={!form.school} />
             </div>
         </Modal>
     );
 };
 
-const EditVisibilityModal = ({ isOpen, onClose, visibility, onSave }) => {
-    const [vis, setVis] = useState(visibility || "public");
+const EditExperienceModal = ({ isOpen, onClose, item, onSave, onDelete }) => {
+    const [form, setForm] = useState({ company: "", title: "", start_year: "", end_year: "", description: "" });
     const [saving, setSaving] = useState(false);
-    
-    useEffect(() => { setVis(visibility || "public"); }, [visibility, isOpen]);
-
+    const [error, setError] = useState("");
+    useEffect(() => {
+        setForm(item || { company: "", title: "", start_year: "", end_year: "", description: "" });
+    }, [item, isOpen]);
     const handleSave = async () => {
         setSaving(true);
-        await onSave({ visibility: vis });
-        setSaving(false);
-        onClose();
+        setError("");
+        try {
+            const res = await onSave(form);
+            if (res && res.ok) onClose();
+            else setError("Failed to save experience.");
+        } finally { setSaving(false); }
     };
-
+    const handleDelete = async () => {
+        if (!item || !item.id || !confirm("Delete this experience entry?")) return;
+        setSaving(true);
+        setError("");
+        try {
+            const res = await onDelete(item.id);
+            if (res && res.ok) onClose();
+            else setError("Failed to delete experience.");
+        } finally { setSaving(false); }
+    };
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile Visibility">
+        <Modal isOpen={isOpen} onClose={onClose} title={item && item.id ? "Edit Experience" : "Add Experience"}>
             <div className="space-y-4">
-                <p className="text-sm text-gray-600 mb-4">Who can view your summary, education, and skills?</p>
-                <select value={vis} onChange={(e) => setVis(e.target.value)} className="w-full border p-3 rounded border-gray-300 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="public">Public</option>
-                    <option value="connections_only">Connections Only</option>
-                    <option value="private">Private</option>
-                </select>
+                <input className="w-full rounded border-gray-300 p-2 border" placeholder="Company *" value={form.company || ""} onChange={(e) => setForm({ ...form, company: e.target.value })} />
+                <input className="w-full rounded border-gray-300 p-2 border" placeholder="Title" value={form.title || ""} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                <div className="grid grid-cols-2 gap-4">
+                    <input className="w-full rounded border-gray-300 p-2 border" placeholder="Start Year" value={form.start_year || ""} onChange={(e) => setForm({ ...form, start_year: e.target.value })} />
+                    <input className="w-full rounded border-gray-300 p-2 border" placeholder="End Year" value={form.end_year || ""} onChange={(e) => setForm({ ...form, end_year: e.target.value })} />
+                </div>
+                <textarea className="w-full rounded border-gray-300 p-2 border min-h-[100px]" placeholder="Description" value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
-            <div className="mt-6 flex justify-end">
-                <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-gray-900 mr-2">Cancel</button>
-                <button disabled={saving} onClick={handleSave} className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50">
-                    Save
-                </button>
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            <div className="mt-6 flex justify-between">
+                <div>{item && item.id && <button disabled={saving} onClick={handleDelete} className="text-red-600 hover:text-red-800 font-medium px-2 py-2">Delete</button>}</div>
+                <SaveFooter onClose={onClose} onSave={handleSave} saving={saving} disabled={!form.company} />
             </div>
         </Modal>
     );
 };
 
-
-// --- MAIN APP COMPONENT ---
+const EditPrivacyModal = ({ isOpen, onClose, profile, onSave }) => {
+    const [form, setForm] = useState({});
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    useEffect(() => {
+        setForm({
+            privacy_photo: (profile && profile.privacy_photo) || "PUBLIC",
+            privacy_headline: (profile && profile.privacy_headline) || "PUBLIC",
+            privacy_location: (profile && profile.privacy_location) || "PUBLIC",
+            privacy_summary: (profile && profile.privacy_summary) || "PUBLIC",
+            privacy_bio: (profile && profile.privacy_bio) || "PUBLIC",
+            privacy_education: (profile && profile.privacy_education) || "PUBLIC",
+            privacy_experience: (profile && profile.privacy_experience) || "PUBLIC",
+            privacy_skills: (profile && profile.privacy_skills) || "PUBLIC",
+            opt_out_view_tracking: !!(profile && profile.opt_out_view_tracking),
+        });
+    }, [profile, isOpen]);
+    const handleSave = async () => {
+        setSaving(true);
+        setError("");
+        try {
+            const res = await onSave(form);
+            if (res && res.ok) onClose();
+            else setError("Failed to save privacy settings.");
+        } finally { setSaving(false); }
+    };
+    const PrivacyRow = ({ label, keyName }) => (
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+            <select className="w-full border p-2 rounded border-gray-300" value={form[keyName] || "PUBLIC"} onChange={(e) => setForm({ ...form, [keyName]: e.target.value })}>
+                {PRIVACY_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+        </div>
+    );
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Field Privacy Controls">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <PrivacyRow label="Photo" keyName="privacy_photo" />
+                <PrivacyRow label="Headline" keyName="privacy_headline" />
+                <PrivacyRow label="Location" keyName="privacy_location" />
+                <PrivacyRow label="Summary" keyName="privacy_summary" />
+                <PrivacyRow label="Bio" keyName="privacy_bio" />
+                <PrivacyRow label="Education" keyName="privacy_education" />
+                <PrivacyRow label="Experience" keyName="privacy_experience" />
+                <PrivacyRow label="Skills" keyName="privacy_skills" />
+            </div>
+            <label className="mt-4 flex items-center text-sm text-gray-700">
+                <input type="checkbox" className="mr-2" checked={!!form.opt_out_view_tracking} onChange={(e) => setForm({ ...form, opt_out_view_tracking: e.target.checked })} />
+                Opt out of profile view tracking
+            </label>
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            <SaveFooter onClose={onClose} onSave={handleSave} saving={saving} />
+        </Modal>
+    );
+};
 
 const ProfileEditorApp = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
-    
-    // Modal states
-    const [modals, setModals] = useState({
-        summary: false,
-        skills: false,
-        visibility: false,
-        education: false
-    });
+    const [modals, setModals] = useState({ basics: false, summary: false, skills: false, privacy: false, education: false, experience: false });
     const [activeEducation, setActiveEducation] = useState(null);
+    const [activeExperience, setActiveExperience] = useState(null);
 
-    const toggleModal = (modalName, state, extraData = null) => {
-        if (modalName === 'education') setActiveEducation(extraData);
-        setModals(prev => ({ ...prev, [modalName]: state }));
+    const toggleModal = (name, state, extraData = null) => {
+        if (name === "education") setActiveEducation(extraData);
+        if (name === "experience") setActiveExperience(extraData);
+        setModals((prev) => ({ ...prev, [name]: state }));
     };
 
     const fetchProfile = async () => {
         try {
-            const res = await fetch('/accounts/api/profile/');
+            const res = await fetch("/api/profile/");
             const data = await res.json();
             setProfile(data);
             setLoading(false);
-        } catch (e) {
-            console.error("Failed to load profile", e);
-        }
+        } catch (e) { console.error("Failed to load profile", e); }
     };
+    useEffect(() => { fetchProfile(); }, []);
 
-    useEffect(() => {
-        fetchProfile();
-    }, []);
-
-    const fetchHelper = async (url, method, body) => {
-        const res = await fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': window.CSRF_TOKEN
-            },
-            body: JSON.stringify(body)
-        });
-        if (res.ok) await fetchProfile(); // Refresh entire state
+    const fetchHelper = async (url, method, body, isJson = true) => {
+        const headers = { "X-CSRFToken": window.CSRF_TOKEN };
+        if (isJson) headers["Content-Type"] = "application/json";
+        const res = await fetch(url, { method, headers, body: isJson ? JSON.stringify(body || {}) : body });
+        if (res.ok) await fetchProfile();
         return res;
     };
 
-    const handleUpdateProfile = async (data) => fetchHelper('/accounts/api/profile/update/', 'POST', data);
-    
-    const handleSaveEducation = async (data) => {
-        if (data.id) {
-            await fetchHelper(`/accounts/api/profile/education/${data.id}/`, 'PUT', data);
-        } else {
-            await fetchHelper('/accounts/api/profile/education/', 'POST', data);
-        }
+    const updateProfile = async (data) => fetchHelper("/api/profile/update/", "POST", data);
+    const uploadPhoto = async (file) => {
+        const formData = new FormData();
+        formData.append("photo", file);
+        return fetchHelper("/api/profile/photo/", "POST", formData, false);
     };
-    
-    const handleDeleteEducation = async (id) => fetchHelper(`/accounts/api/profile/education/${id}/`, 'DELETE', {});
+    const saveEducation = async (data) => data.id ? fetchHelper(`/api/profile/education/${data.id}/`, "PUT", data) : fetchHelper("/api/profile/education/", "POST", data);
+    const deleteEducation = async (id) => fetchHelper(`/api/profile/education/${id}/`, "DELETE", {});
+    const saveExperience = async (data) => data.id ? fetchHelper(`/api/profile/experience/${data.id}/`, "PUT", data) : fetchHelper("/api/profile/experience/", "POST", data);
+    const deleteExperience = async (id) => fetchHelper(`/api/profile/experience/${id}/`, "DELETE", {});
 
-    if (loading) return null; // Let the HTML skeleton show
+    if (loading || !profile) return null;
 
     return (
         <div className="space-y-6 relative">
-            
             <div className="flex justify-end mb-2">
-                <button onClick={() => toggleModal('visibility', true)} className="text-sm text-gray-500 hover:text-indigo-600 flex items-center bg-white px-3 py-1.5 rounded-full border border-gray-200">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                    Visibility: <span className="font-semibold ml-1 capitalize">{profile.visibility.replace('_', ' ')}</span>
+                <button onClick={() => toggleModal("privacy", true)} className="text-sm text-gray-500 hover:text-indigo-600 flex items-center bg-white px-3 py-1.5 rounded-full border border-gray-200">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    Privacy Controls
                 </button>
             </div>
 
-            {/* Summary Card */}
-            <ProfileSectionCard title="Professional Summary" onEdit={() => toggleModal('summary', true)}>
+            <ProfileSectionCard title="Profile Basics" onEdit={() => toggleModal("basics", true)}>
+                <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                        {profile.photo ? <img src={profile.photo} className="w-full h-full object-cover" /> : <span className="text-xs text-gray-500">No Photo</span>}
+                    </div>
+                    <div>
+                        <p className="text-gray-900 font-semibold">{profile.headline || "No headline added"}</p>
+                        <p className="text-gray-600 text-sm">{profile.location || "No location provided"}</p>
+                        <p className="text-gray-700 text-sm mt-2 whitespace-pre-wrap">{profile.bio || "No bio yet."}</p>
+                    </div>
+                </div>
+            </ProfileSectionCard>
+
+            <ProfileSectionCard title="Professional Summary" onEdit={() => toggleModal("summary", true)}>
                 <p className="text-gray-700 whitespace-pre-wrap">{profile.summary || <span className="italic text-gray-400">No summary provided.</span>}</p>
             </ProfileSectionCard>
 
-            {/* Education Card */}
-            <ProfileSectionCard title="Education" onAdd={() => toggleModal('education', true, null)}>
-                {profile.educations && profile.educations.length > 0 ? (
-                    <div className="space-y-6">
-                        {profile.educations.map(edu => (
-                            <div key={edu.id} className="flex items-start border-b border-gray-50 pb-4 last:border-0 relative group">
-                                <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center text-gray-500 mr-4 flex-shrink-0 mt-1">
-                                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2.12-1.15V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>
-                                </div>
-                                <div className="flex-grow">
-                                    <h5 className="text-base font-bold text-gray-900">{edu.school}</h5>
-                                    <p className="text-sm text-gray-800">{edu.degree}{edu.field_of_study && ` in ${edu.field_of_study}`}</p>
-                                    <p className="text-sm text-gray-500 mt-0.5">{edu.start_year || 'Unknown'} - {edu.end_year || 'Present'}</p>
-                                    {edu.grade && <p className="text-sm text-gray-600 mt-1">Grade: {edu.grade}</p>}
-                                </div>
-                                <button onClick={() => toggleModal('education', true, edu)} className="text-gray-400 hover:text-indigo-600 p-2 opacity-0 group-hover:opacity-100 transition">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                </button>
-                            </div>
-                        ))}
+            <ProfileSectionCard title="Education" onEdit={() => toggleModal("education", true, (profile.educations && profile.educations[0]) || null)} onAdd={() => toggleModal("education", true, null)}>
+                {(profile.educations || []).length > 0 ? profile.educations.map((edu) => (
+                    <div key={edu.id} className="flex items-start border-b border-gray-50 pb-4 mb-4 last:border-0 last:mb-0 relative group">
+                        <div className="flex-grow">
+                            <h5 className="text-base font-bold text-gray-900">{edu.school}</h5>
+                            <p className="text-sm text-gray-800">{edu.degree}{edu.field_of_study && ` in ${edu.field_of_study}`}</p>
+                            <p className="text-sm text-gray-500 mt-0.5">{edu.start_year || "Unknown"} - {edu.end_year || "Present"}</p>
+                        </div>
+                        <button onClick={() => toggleModal("education", true, edu)} className="text-gray-400 hover:text-indigo-600 p-2 opacity-0 group-hover:opacity-100 transition">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
                     </div>
-                ) : (
-                    <p className="text-gray-500 italic text-sm">Not specified</p>
-                )}
+                )) : <p className="text-gray-500 italic text-sm">Not specified</p>}
             </ProfileSectionCard>
 
-            {/* Skills Card */}
-            <ProfileSectionCard title="Skills" onEdit={() => toggleModal('skills', true)}>
+            <ProfileSectionCard title="Experience" onEdit={() => toggleModal("experience", true, (profile.experiences && profile.experiences[0]) || null)} onAdd={() => toggleModal("experience", true, null)}>
+                {(profile.experiences || []).length > 0 ? profile.experiences.map((exp) => (
+                    <div key={exp.id} className="flex items-start border-b border-gray-50 pb-4 mb-4 last:border-0 last:mb-0 relative group">
+                        <div className="flex-grow">
+                            <h5 className="text-base font-bold text-gray-900">{exp.company}</h5>
+                            <p className="text-sm text-gray-800">{exp.title || "Role not specified"}</p>
+                            <p className="text-sm text-gray-500 mt-0.5">{exp.start_year || "Unknown"} - {exp.end_year || "Present"}</p>
+                            {exp.description && <p className="text-sm text-gray-700 mt-1 whitespace-pre-wrap">{exp.description}</p>}
+                        </div>
+                        <button onClick={() => toggleModal("experience", true, exp)} className="text-gray-400 hover:text-indigo-600 p-2 opacity-0 group-hover:opacity-100 transition">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
+                    </div>
+                )) : <p className="text-gray-500 italic text-sm">No experience added yet.</p>}
+            </ProfileSectionCard>
+
+            <ProfileSectionCard title="Skills" onEdit={() => toggleModal("skills", true)}>
                 {profile.skills ? (
                     <div className="flex flex-wrap gap-2">
-                        {profile.skills.split(',').map((skill, i) => (
-                            <span key={i} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-md text-sm font-medium border border-gray-200">
-                                {skill.trim()}
-                            </span>
-                        ))}
+                        {profile.skills.split(",").map((skill, i) => <span key={i} className="bg-gray-100 text-gray-800 px-3 py-1 rounded-md text-sm font-medium border border-gray-200">{skill.trim()}</span>)}
                     </div>
-                ) : (
-                    <p className="text-gray-500 italic text-sm">Not specified</p>
-                )}
+                ) : <p className="text-gray-500 italic text-sm">Not specified</p>}
             </ProfileSectionCard>
 
-            {/* Render Modals */}
-            <EditSummaryModal isOpen={modals.summary} onClose={() => toggleModal('summary', false)} summary={profile.summary} onSave={handleUpdateProfile} />
-            <EditSkillsModal isOpen={modals.skills} onClose={() => toggleModal('skills', false)} skills={profile.skills} onSave={handleUpdateProfile} />
-            <EditVisibilityModal isOpen={modals.visibility} onClose={() => toggleModal('visibility', false)} visibility={profile.visibility} onSave={handleUpdateProfile} />
-            <EditEducationModal isOpen={modals.education} onClose={() => toggleModal('education', false)} educationItem={activeEducation} onSave={handleSaveEducation} onDelete={handleDeleteEducation} />
-
+            <EditBasicsModal isOpen={modals.basics} onClose={() => toggleModal("basics", false)} profile={profile} onSave={updateProfile} onPhotoSave={uploadPhoto} />
+            <EditSummaryModal isOpen={modals.summary} onClose={() => toggleModal("summary", false)} summary={profile.summary} onSave={updateProfile} />
+            <EditSkillsModal isOpen={modals.skills} onClose={() => toggleModal("skills", false)} skills={profile.skills} onSave={updateProfile} />
+            <EditPrivacyModal isOpen={modals.privacy} onClose={() => toggleModal("privacy", false)} profile={profile} onSave={updateProfile} />
+            <EditEducationModal isOpen={modals.education} onClose={() => toggleModal("education", false)} item={activeEducation} onSave={saveEducation} onDelete={deleteEducation} />
+            <EditExperienceModal isOpen={modals.experience} onClose={() => toggleModal("experience", false)} item={activeExperience} onSave={saveExperience} onDelete={deleteExperience} />
         </div>
     );
 };
 
-const rootStyle = document.getElementById('react-profile-root');
+const rootStyle = document.getElementById("react-profile-root");
 if (rootStyle) {
     const root = ReactDOM.createRoot(rootStyle);
     root.render(<ProfileEditorApp />);

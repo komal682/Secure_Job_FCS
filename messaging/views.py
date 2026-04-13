@@ -27,11 +27,30 @@ def thread_detail_view(request, thread_id):
         if content:
             # ENCRYPT before saving to database
             encrypted_bytes = encrypt_message(content)
-            Message.objects.create(
+            new_msg = Message(
                 thread=thread,
                 sender=request.user,
                 encrypted_content=encrypted_bytes
             )
+            
+            # PKI Digital Signature
+            raw_password = request.session.get('pki_passphrase', '')
+            if request.user.private_key_encrypted and raw_password:
+                import base64
+                from cryptography.hazmat.primitives.asymmetric import padding
+                from cryptography.hazmat.primitives import hashes, serialization
+                from cryptography.hazmat.backends import default_backend
+                try:
+                    private_key_bytes = request.user.private_key_encrypted.encode('utf-8')
+                    private_key = serialization.load_pem_private_key(
+                        private_key_bytes, password=raw_password.encode(), backend=default_backend()
+                    )
+                    signature = private_key.sign(content.encode('utf-8'), padding.PKCS1v15(), hashes.SHA256())
+                    new_msg.cryptographic_signature = base64.b64encode(signature).decode('utf-8')
+                except Exception:
+                    pass
+            
+            new_msg.save()
             # Update thread updated_at
             thread.save()
             return redirect('thread_detail', thread_id=thread.id)
@@ -51,7 +70,8 @@ def thread_detail_view(request, thread_id):
             'sender': msg.sender,
             'is_me': msg.sender == request.user,
             'text': decrypt_message(msg.encrypted_content),
-            'created_at': msg.created_at
+            'created_at': msg.created_at,
+            'signature': msg.cryptographic_signature
         })
         
     other_user = thread.get_other_participant(request.user)

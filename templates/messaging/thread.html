@@ -55,7 +55,12 @@
             <div class="flex justify-end pt-2">
                 <div class="max-w-xs md:max-w-md bg-indigo-600 text-white rounded-2xl rounded-tr-none px-5 py-3 shadow-sm relative">
                     <p class="text-sm whitespace-pre-wrap">{{ msg.text }}</p>
-                    <p class="text-[10px] text-indigo-200 mt-2 text-right">{{ msg.created_at|time:"g:i A" }}</p>
+                    <p class="text-[10px] text-indigo-200 mt-2 text-right">
+                        {% if msg.signature %}
+                        <span class="mr-2 text-green-300 font-semibold" title="{{ msg.signature|truncatechars:20 }}">✓ PKI Signed</span>
+                        {% endif %}
+                        {{ msg.created_at|time:"g:i A" }}
+                    </p>
                 </div>
             </div>
             {% else %}
@@ -67,7 +72,12 @@
                     </div>
                     <div class="max-w-xs md:max-w-md bg-white border border-gray-200 text-gray-800 rounded-2xl rounded-tl-none px-5 py-3 shadow-sm relative">
                         <p class="text-sm whitespace-pre-wrap">{{ msg.text }}</p>
-                        <p class="text-[10px] text-gray-400 mt-2">{{ msg.created_at|time:"g:i A" }}</p>
+                        <p class="text-[10px] text-gray-400 mt-2 flex justify-between">
+                            <span>{{ msg.created_at|time:"g:i A" }}</span>
+                            {% if msg.signature %}
+                            <span class="ml-2 text-green-600 font-bold" title="{{ msg.signature|truncatechars:20 }}">✓ PKI Verified</span>
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>

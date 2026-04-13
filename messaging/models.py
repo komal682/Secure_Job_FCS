@@ -32,6 +32,7 @@ class Message(models.Model):
     
     # Store the AES-256 Fernet token
     encrypted_content = models.BinaryField()
+    cryptographic_signature = models.TextField(blank=True, help_text="RSA PKCS#1v1.5 signature of plain text message")
     
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

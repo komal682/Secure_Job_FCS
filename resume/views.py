@@ -19,6 +19,18 @@ def upload_resume(request):
             file = request.FILES['resume_file']
             file_data = file.read()
             
+            # Basic AI parsing of PDF for intelligent matching
+            parsed_keywords = ""
+            import PyPDF2
+            import io
+            try:
+                pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_data))
+                for page in pdf_reader.pages:
+                    parsed_keywords += (page.extract_text() or "") + " "
+                parsed_keywords = parsed_keywords.lower()
+            except Exception:
+                pass
+
             # AES-256 encryption
             key = settings.RESUME_ENCRYPTION_KEY
             iv = os.urandom(16)
@@ -30,7 +42,8 @@ def upload_resume(request):
             Resume.objects.create(
                 user=request.user,
                 encrypted_file=encrypted_data,
-                original_filename=file.name
+                original_filename=file.name,
+                parsed_keywords=parsed_keywords
             )
             return redirect('upload_success')
     else:
@@ -52,6 +65,9 @@ def resume_list(request):
 
 from django.http import HttpResponse, Http404
 
+from django.contrib import messages
+import pyotp
+
 @login_required
 def download_decrypted_resume(request, resume_id):
     resume = Resume.objects.get(id=resume_id)
@@ -66,6 +82,16 @@ def download_decrypted_resume(request, resume_id):
         has_access = Application.objects.filter(job__company__employer=request.user, resume=resume).exists()
         if not has_access:
             raise Http404("Not authorized to view this application's vault.")
+
+    # High-Risk Action: OTP via Virtual Keyboard verification
+    if request.method == 'POST':
+        token = request.POST.get('token', '').strip()
+        totp = pyotp.TOTP(request.user.totp_secret)
+        if not totp.verify(token):
+            messages.error(request, 'Invalid TOTP code or unauthorized keyboard use detected.')
+            return render(request, 'resume/secure_prompt.html', {'resume': resume})
+    else:
+        return render(request, 'resume/secure_prompt.html', {'resume': resume})
             
     # Load into memory block
     encrypted_data = bytes(resume.encrypted_file) if isinstance(resume.encrypted_file, memoryview) else resume.encrypted_file
@@ -83,7 +109,6 @@ def download_decrypted_resume(request, resume_id):
     # Serve to browser securely from memory
     response = HttpResponse(decrypted_data, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="decrypted_resume.pdf"'
-    # We use extension .pdf by default or we can use the original if text
     if resume.original_filename.endswith('.txt'):
         response['Content-Type'] = 'text/plain'
         response['Content-Disposition'] = f'inline; filename="decrypted_{resume.original_filename}"'

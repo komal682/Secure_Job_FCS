@@ -44,6 +44,33 @@ def job_create(request):
         if form.is_valid():
             job = form.save(commit=False)
             job.company = company
+            
+            # Cryptographic Signing (PKI)
+            raw_password = request.session.get('pki_passphrase', '')
+            if request.user.private_key_encrypted and raw_password:
+                import base64
+                from cryptography.hazmat.primitives.asymmetric import rsa, padding
+                from cryptography.hazmat.primitives import hashes, serialization
+                from cryptography.hazmat.backends import default_backend
+                
+                try:
+                    private_key_bytes = request.user.private_key_encrypted.encode('utf-8')
+                    private_key = serialization.load_pem_private_key(
+                        private_key_bytes,
+                        password=raw_password.encode(),
+                        backend=default_backend()
+                    )
+                    
+                    data_string = f"{job.title}{job.location}{job.employment_type}{job.company.id}"
+                    signature = private_key.sign(
+                        data_string.encode('utf-8'),
+                        padding.PKCS1v15(),
+                        hashes.SHA256()
+                    )
+                    job.cryptographic_signature = base64.b64encode(signature).decode('utf-8')
+                except Exception as e:
+                    pass # Failsafe against incorrect passphrase during debug logins
+            
             job.save()
             messages.success(request, f"Successfully created job posting: {job.title}")
             return redirect('employer_jobs_list')

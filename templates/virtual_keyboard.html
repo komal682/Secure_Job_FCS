@@ -1,0 +1,163 @@
+<style>
+    .vk-btn {
+        width: 100%;
+        padding: 1rem;
+        background-color: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        font-weight: bold;
+        font-size: 1.25rem;
+        text-align: center;
+        transition: all 0.15s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        color: #1f2937;
+    }
+    .vk-btn:hover { background-color: #f3f4f6; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .vk-btn:active { background-color: #e5e7eb; transform: translateY(0); }
+</style>
+
+<!-- Summon Button -->
+<div class="flex justify-center mt-4">
+    <button type="button" id="vk-open-btn-{{ vk_target_id }}" class="inline-flex items-center px-4 py-2 border border-blue-200 rounded-lg shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none transition focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+        Open Virtual Keypad
+    </button>
+</div>
+
+<!-- Floating Draggable Modal -->
+<div id="vk-modal-{{ vk_target_id }}" class="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center" style="display: none;">
+    <div id="vk-drag-node-{{ vk_target_id }}" class="pointer-events-auto bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden w-80 absolute custom-drag-box" style="left: 50%; top: 50%; transform: translate(-50%, -50%); margin:0;">
+        
+        <!-- Drag Handle (Header) -->
+        <div id="vk-drag-header-{{ vk_target_id }}" class="bg-gray-100 p-3 cursor-move flex items-center justify-between border-b border-gray-200 select-none active:bg-gray-200 transition-colors">
+            <div class="flex items-center text-xs text-gray-500 font-semibold uppercase tracking-wider">
+                <svg class="w-4 h-4 mr-1 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                Secure Keypad
+            </div>
+            <button type="button" id="vk-close-btn-{{ vk_target_id }}" class="text-gray-400 hover:text-red-500 focus:outline-none transition p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="p-5 bg-gray-50">
+            <div class="grid grid-cols-3 gap-3" id="virtual-keyboard-{{ vk_target_id }}">
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="1">1</button>
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="2">2</button>
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="3">3</button>
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="4">4</button>
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="5">5</button>
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="6">6</button>
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="7">7</button>
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="8">8</button>
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="9">9</button>
+                <button type="button" class="vk-btn text-red-500 tracking-wide" style="font-size: 0.85rem;" id="vk-clear-{{ vk_target_id }}">CLEAR</button>
+                <button type="button" class="vk-btn hover:text-blue-600" data-key="0">0</button>
+                <button type="button" class="vk-btn text-gray-600 bg-gray-100" id="vk-back-{{ vk_target_id }}"><svg class="w-6 h-6 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"></path></svg></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const targetInput = document.getElementById('{{ vk_target_id }}');
+        const modal = document.getElementById('vk-modal-{{ vk_target_id }}');
+        const openBtn = document.getElementById('vk-open-btn-{{ vk_target_id }}');
+        const closeBtn = document.getElementById('vk-close-btn-{{ vk_target_id }}');
+        const vkContainer = document.getElementById('virtual-keyboard-{{ vk_target_id }}');
+        
+        // Strict Defense
+        targetInput.addEventListener('keydown', function(event) {
+            if (!['Tab', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                event.preventDefault();
+            }
+        });
+        targetInput.addEventListener('paste', e => e.preventDefault());
+        targetInput.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Toggle Logic
+        function showVK() {
+            modal.style.display = 'flex';
+        }
+        function hideVK() {
+            modal.style.display = 'none';
+        }
+        openBtn.addEventListener('click', showVK);
+        targetInput.addEventListener('click', showVK);
+        closeBtn.addEventListener('click', hideVK);
+        
+        // Drag Logic
+        const dragBox = document.getElementById('vk-drag-node-{{ vk_target_id }}');
+        const dragHeader = document.getElementById('vk-drag-header-{{ vk_target_id }}');
+        let isDragging = false;
+        let startX, startY, initialLeft, initialTop;
+
+        dragHeader.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            initialLeft = dragBox.offsetLeft;
+            initialTop = dragBox.offsetTop;
+            document.body.style.userSelect = 'none'; // prevent text selection
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            dragBox.style.left = `${initialLeft + dx}px`;
+            dragBox.style.top = `${initialTop + dy}px`;
+        });
+
+        document.addEventListener('mouseup', function(e) {
+            isDragging = false;
+            document.body.style.userSelect = 'auto';
+        });
+
+        // Keyboard Button Interactions
+        function setupKeys() {
+            vkContainer.querySelectorAll('.vk-btn[data-key]').forEach(btn => {
+                let newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', () => {
+                    if(targetInput.value.length < 6) {
+                        targetInput.value += newBtn.getAttribute('data-key');
+                        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                });
+            });
+
+            document.getElementById('vk-clear-{{ vk_target_id }}').addEventListener('click', () => {
+                targetInput.value = '';
+                targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            document.getElementById('vk-back-{{ vk_target_id }}').addEventListener('click', () => {
+                targetInput.value = targetInput.value.slice(0, -1);
+                targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        }
+        
+        // Shuffle mechanism
+        const buttons = Array.from(vkContainer.querySelectorAll('.vk-btn[data-key]'));
+        const bottomRow = [
+            document.getElementById('vk-clear-{{ vk_target_id }}'),
+            buttons.find(b => b.getAttribute('data-key') === '0'),
+            document.getElementById('vk-back-{{ vk_target_id }}')
+        ];
+        
+        const topKeys = buttons.filter(b => b.getAttribute('data-key') !== '0');
+        for (let i = topKeys.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [topKeys[i], topKeys[j]] = [topKeys[j], topKeys[i]];
+        }
+        
+        vkContainer.innerHTML = '';
+        topKeys.forEach(btn => vkContainer.appendChild(btn));
+        bottomRow.forEach(btn => vkContainer.appendChild(btn));
+        
+        setupKeys();
+    });
+</script>

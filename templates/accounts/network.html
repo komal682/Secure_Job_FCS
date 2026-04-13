@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}My Network | Secure Job Portal{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between mb-8">
+        <h2 class="text-3xl font-bold text-gray-900">Professional Network</h2>
+        <a href="{% url 'candidate_dashboard' %}" class="text-indigo-600 font-medium hover:text-indigo-800 flex items-center">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Main Column: Connections -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            {% if incoming_requests %}
+            <div class="bg-white rounded-xl shadow-sm border border-yellow-200 overflow-hidden">
+                <div class="bg-yellow-50 p-4 border-b border-yellow-200">
+                    <h3 class="font-bold text-yellow-800 text-lg">Incoming Connection Requests ({{ incoming_requests|length }})</h3>
+                </div>
+                <ul class="divide-y divide-gray-100">
+                    {% for req in incoming_requests %}
+                    <li class="p-6 flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xl mr-4">
+                                {{ req.sender.email|make_list|first|upper }}
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900">{{ req.sender.first_name }} {{ req.sender.last_name }}</h4>
+                                <p class="text-sm text-gray-500">{{ req.sender.email }}</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a href="{% url 'manage_connection_request' req.id 'accept' %}" class="bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700">Accept</a>
+                            <a href="{% url 'manage_connection_request' req.id 'reject' %}" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">Ignore</a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="font-bold text-gray-900 text-lg">My Connections ({{ connections|length }})</h3>
+                </div>
+                {% if connections %}
+                <ul class="divide-y divide-gray-100">
+                    {% for conn in connections %}
+                    <li class="p-6 flex items-center justify-between hover:bg-gray-50 transition">
+                        <a href="{% url 'candidate_public_profile' conn.id %}" class="flex items-center flex-1">
+                            {% if conn.candidate_profile and conn.candidate_profile.photo %}
+                                <img src="{{ conn.candidate_profile.photo.url }}" class="w-12 h-12 rounded-full object-cover mr-4 shadow-sm border border-gray-200">
+                            {% else %}
+                                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xl mr-4 shadow-sm">
+                                    {{ conn.email|make_list|first|upper }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900 hover:text-indigo-600 transition">{{ conn.first_name|default:conn.email }}</h4>
+                                {% if conn.candidate_profile and conn.candidate_profile.summary %}
+                                <p class="text-sm text-gray-500 line-clamp-1">{{ conn.candidate_profile.summary }}</p>
+                                {% endif %}
+                            </div>
+                        </a>
+                        <div class="flex items-center space-x-3">
+                            <a href="{% url 'start_conversation' conn.id %}" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Message</a>
+                            <a href="{% url 'remove_connection' conn.id %}" class="text-red-500 hover:text-red-700 text-sm font-medium" onclick="return confirm('Remove connection?');">Remove</a>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="p-12 text-center text-gray-500">
+                    <svg class="w-12 h-12 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    <p>You don't have any connections yet. Join discussions or apply to jobs to build your network!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Profile Views -->
+        <div class="space-y-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-indigo-50 p-6 border-b border-indigo-100 flex justify-between items-center">
+                    <h3 class="font-bold text-indigo-900">Who Viewed My Profile</h3>
+                </div>
+                
+                {% if has_opted_out %}
+                <div class="p-6 text-center text-gray-500 bg-gray-50">
+                    <svg class="w-10 h-10 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path></svg>
+                    <p class="text-sm mt-2">You are currently in <strong>Private Mode</strong>. Because you opted out of view tracking, we cannot show you who views your profile.</p>
+                </div>
+                {% else %}
+                    {% if profile_views or opted_out_count > 0 %}
+                    <ul class="divide-y divide-gray-50">
+                        {% for pv in profile_views %}
+                        <li class="p-4 flex items-center justify-between">
+                            <a href="{% url 'candidate_public_profile' pv.viewer.id %}" class="flex items-center flex-1 hover:bg-gray-50 p-2 rounded-lg transition">
+                                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold mr-3 text-sm">
+                                    {{ pv.viewer.email|make_list|first|upper }}
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900">{{ pv.viewer.first_name|default:pv.viewer.email }}</h4>
+                                    <p class="text-xs text-gray-500">{{ pv.viewer.role }}</p>
+                                </div>
+                            </a>
+                        </li>
+                        {% endfor %}
+                        
+                        {% if opted_out_count > 0 %}
+                        <li class="p-4 flex items-center">
+                            <div class="flex items-center flex-1 p-2">
+                                <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold mr-3 text-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-700">Anonymous {{ opted_out_count|pluralize:"Member,Members" }}</h4>
+                                    <p class="text-xs text-gray-500">{{ opted_out_count }} people in private mode</p>
+                                </div>
+                            </div>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    {% else %}
+                    <div class="p-8 text-center text-gray-500">
+                        <p class="text-sm">No one has viewed your profile recently. Apply to jobs to gain visibility!</p>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+            
+            <div class="bg-indigo-600 rounded-xl p-6 text-white shadow-md text-center">
+                <svg class="w-12 h-12 mx-auto text-indigo-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <h3 class="font-bold mb-2">Privacy Settings</h3>
+                <p class="text-sm text-indigo-200 mb-4">Control who can see your summary, education, and skills. Opt-out of profile view tracking at any time.</p>
+                <a href="{% url 'candidate_profile_setup' %}" class="inline-block bg-white text-indigo-600 px-4 py-2 rounded-md text-sm font-bold shadow-sm hover:bg-gray-50">Manage Privacy</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

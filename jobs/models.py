@@ -33,6 +33,8 @@ class JobPosting(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    cryptographic_signature = models.TextField(blank=True, help_text="RSA PKCS#1v1.5 signature of job data")
 
     def __str__(self):
         return f"{self.title} at {self.company.name}"

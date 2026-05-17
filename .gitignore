@@ -13,7 +13,6 @@ ENV/
 # Uploaded Media and Test Files
 media/
 *.pdf
-*.txt
 *.png
 *.jpg
 *.jpeg

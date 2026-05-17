@@ -1,117 +1,55 @@
-# Secure Job Search and Professional Networking Platform
+# Secure Job Search Platform
 
-This repository contains the backend and frontend components for a highly secure job search and candidate management platform built with Django.
+A highly secure job search and candidate management platform built with Django and PostgreSQL.
 
 ## 🚀 Key Features
-*   **Role-Based Access Control (RBAC)**: Distinct workflows for Candidates, Employers, and Platform Admins.
-*   **Dual-Layer Authentication**: Traditional Email/Password combined with integrated **Time-based One-Time Password (TOTP)** via Google Authenticator.
-*   **Secure Resume Vault**: Uploaded resumes (.pdf, .docx) are encrypted at rest using military-grade `AES-256`.
-*   **Moderation Console**: A stealth admin portal for managing, suspending, and deleting user accounts.
 
----
+* **Role-Based Access Control (RBAC)**: Distinct workflows for Candidates, Employers, and Admins.
+* **Dual-Layer Authentication**: Traditional Email/Password combined with **TOTP (Google Authenticator)**.
+* **Secure Resume Vault**: Resumes are encrypted at rest using `AES-256`.
+* **Moderation Console**: A stealth admin portal for managing user accounts.
 
-## 🛠️ How to Run the Project Locally
+## 🛠️ Quick Start (Local Setup)
 
-Follow these steps to set up the development environment from scratch:
+1. **Clone & Environment**:
+   ```bash
+   python -m venv venv
+   # Activate: `venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
+   pip install -r requirements.txt
+   ```
 
-### 1. Prerequisites
-*   Python 3.10+
-*   PostgreSQL installed and running locally.
+2. **Database**: 
+   Create a PostgreSQL database named `job_portal` with user `postgres` and password `komal123` (or update your `settings.py` to match your local credentials).
 
-### 2. Database Setup (PostgreSQL)
-You must create a local database and a dedicated user before running the Django app. Open your `psql` terminal and execute:
+3. **Migrate & Seed**:
+   ```bash
+   python manage.py makemigrations
+   python manage.py migrate
+   python seed_db.py # Generates test users & jobs
+   ```
 
-```sql
-CREATE DATABASE securejob_db;
-CREATE USER secureuser WITH PASSWORD 'your_secure_password';
-ALTER ROLE secureuser SET client_encoding TO 'utf8';
-ALTER ROLE secureuser SET default_transaction_isolation TO 'read committed';
-ALTER ROLE secureuser SET timezone TO 'UTC';
-GRANT ALL PRIVILEGES ON DATABASE securejob_db TO secureuser;
-```
+4. **Run Server**:
+   ```bash
+   python manage.py runserver
+   ```
+   The application will be running at `http://127.0.0.1:8000/`.
 
-*Note: Make sure to update your `backend/settings.py` `DATABASES` configuration with the password you chose above.*
+## 🛡️ Default Credentials (from seed_db.py)
 
-### 3. Application Setup
-Open a terminal in the root folder of this project and run the following commands:
+If you ran `seed_db.py`, use these accounts to test the platform:
+* **Admin**: `admin@fcs.com` / `ksvs@987`
+* **Employer**: `employer@fcs.com` / `pass123`
+* **Candidate**: `candidate1@fcs.com` / `pass123`
 
-```bash
-# 1. Create a Python Virtual Environment
-python -m venv venv
+## ☁️ Deployment (Render)
 
-# 2. Activate the virtual environment
-# On Windows:
-.\venv\Scripts\activate
-# On Mac/Linux:
-source venv/bin/activate
-
-# 3. Install the required Python packages
-pip install -r requirements.txt
-
-# 4. Apply Database Migrations
-python manage.py makemigrations
-python manage.py migrate
-
-# 5. Start the Development Server
-python manage.py runserver 8000
-```
-Your application will now be running at `http://localhost:8000/`.
-
----
-
-## 🛡️ Admin & Superuser Credentials
-
-The application uses a hidden, stealth gateway for administrators. This prevents automated bots from discovering the admin login page.
-
-**Admin Login URL:** `http://localhost:8000/secure-hq/login/`
-
-### Default Admin Credentials
-If you have run the migration scripts or the setup script, the default master admin credentials are:
-*   **Email:** `fcs24@gmail.com`
-*   **Password:** `ksvs@987`
-
-*(Note: Upon first login, you will be forced to scan a QR code with Google Authenticator to bind a TOTP token to this admin account).*
-
-### Creating Additional Superusers
-If you need to create another administrative account (or if the default one is deleted), run this command in your active terminal:
-```bash
-python manage.py createsuperuser
-```
-The terminal will prompt you to enter an Email and a Password. Once created, that user must log in through the `/secure-hq/login/` gateway, where they will also be assigned a mandatory TOTP QR Code on their first attempt.
-
----
-
-## 📡 API / Route Endpoints Summary
-
-Here is the directory of all web routes and API endpoints for the core features:
-
-### General & Authentication
-| Route/Endpoint | Description | Access Level |
-| :--- | :--- | :--- |
-| `/` | The public Landing Page. | Public |
-| `/role-selection/<action>/` | The generic screen asking if you are a Candidate or Employer for Registration. | Public |
-| `/register/<role>/` | Registration form for the specific role selected. | Public |
-| `/login/` | The **Unified Login Gateway**. Automatically routes to the correct dashboard. | Public |
-| `/totp/setup/` | Renders the TOTP QR Code for new accounts registering 2FA. | Mid-Auth Only |
-| `/totp/verify/` | Prompts for the 6-digit code for existing accounts logging in. | Mid-Auth Only |
-| `/logout/` | Terminates the active session. | Authenticated |
-
-### Dashboards
-| Route/Endpoint | Description | Access Level |
-| :--- | :--- | :--- |
-| `/dashboard/candidate/` | The main view for job seekers (View jobs, upload resume). | **Candidate** Only |
-| `/dashboard/employer/` | The main view for recruiters (Post jobs, view resumes). | **Employer** Only |
-
-### Secure Resume Vault
-| Route/Endpoint | Description | Access Level |
-| :--- | :--- | :--- |
-| `/resume/upload/` | Submit a PDF/DOCX to be AES-256 encrypted. | **Candidate** Only |
-| `/resume/success/` | Confirmation of successful encryption and DB storage. | **Candidate** Only |
-| `/resume/list/` | Decrypts and lists resumes. (Candidates see their own; Employers see all). | Authenticated |
-
-### Stealth Admin Portal
-| Route/Endpoint | Description | Access Level |
-| :--- | :--- | :--- |
-| `/secure-hq/login/` | The isolated, high-security login portal for moderators. | Admin Credentials |
-| `/secure-hq/dashboard/` | Data table listing all users and their status. | **Admin** Only |
-| `/secure-hq/moderate/<user_id>/<action>/` | POST endpoint to trigger user `suspend` or `delete`. | **Admin** Only |
+This project is configured for easy deployment on [Render](https://render.com/).
+1. Connect this repository to a new Render **Web Service**.
+2. Connect a Render **PostgreSQL** database.
+3. Set the following Environment Variables in your Web Service:
+   - `DATABASE_URL` (From your Render Postgres instance)
+   - `SECRET_KEY` (Generate a secure random string)
+   - `DEBUG` (Set to `False`)
+   - `ALLOWED_HOSTS` (Set to `*` or your Render URL)
+   - `PYTHON_VERSION` (Set to `3.10.12`)
+4. The `build.sh` script will automatically handle installation and migrations.

@@ -37,7 +37,6 @@ A highly secure job search and candidate management platform built with Django a
 ## 🛡️ Default Credentials (from seed_db.py)
 
 If you ran `seed_db.py`, use these accounts to test the platform:
-* **Admin**: `admin@fcs.com` / `ksvs@987`
 * **Employer**: `employer@fcs.com` / `pass123`
 * **Candidate**: `candidate1@fcs.com` / `pass123`
 
